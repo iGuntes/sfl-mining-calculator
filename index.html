@@ -113,7 +113,7 @@
             <div class="row small">
               <div>
                 <label for="costMode">Модель себестоимости</label>
-                <div class="help">Market basis использует цены рынка на ингредиенты, self-production — внутреннюю себестоимость своей цепочки, hybrid — собственную цепочку для крафта инструмента, но сравнение выгоды идёт с ценой продажи на рынке.</div>
+                <div class="help">Рыночная база использует цены рынка на ингредиенты, Собственная добыча — внутреннюю себестоимость своей цепочки, Гибрид — собственную цепочку для крафта инструмента, но сравнение выгоды идёт с ценой продажи на рынке.</div>
               </div>
               <select id="costMode">
                 <option value="market">Рыночная база</option>
@@ -125,7 +125,7 @@
             <div class="row small">
               <div>
                 <label for="chainModel">Модель цепочки</label>
-                <div class="help">По среднему дропу — как в v14, где стоимость предыдущих звеньев делится на твой средний выход ресурса. Фиксированный рецепт — жёсткая COIN-стоимость инструмента по рецепту без деления на дроп.</div>
+                <div class="help">По среднему дропу — стоимость предыдущих звеньев делится на твой средний выход ресурса. Фиксированный рецепт — жёсткая COIN-стоимость инструмента по рецепту без деления на дроп.</div>
               </div>
               <select id="chainModel">
                 <option value="yield">По среднему дропу</option>
@@ -159,10 +159,10 @@
           <h2>Средний дроп с 1 инструмента</h2>
           <div class="resource-grid">
             <div class="resource-row"><label for="yieldWood">Wood (топор)</label><input id="yieldWood" type="number" min="0.0001" step="0.01" value="1.90" /><span class="muted">шт./инструмент</span></div>
-            <div class="resource-row"><label for="yieldStone">Stone (wooden pickaxe)</label><input id="yieldStone" type="number" min="0.0001" step="0.01" value="2.39" /><span class="muted">шт./инструмент</span></div>
-            <div class="resource-row"><label for="yieldIron">Iron (stone pickaxe)</label><input id="yieldIron" type="number" min="0.0001" step="0.01" value="2.15" /><span class="muted">шт./инструмент</span></div>
-            <div class="resource-row"><label for="yieldGold">Gold (iron pickaxe)</label><input id="yieldGold" type="number" min="0.0001" step="0.01" value="1.80" /><span class="muted">шт./инструмент</span></div>
-            <div class="resource-row"><label for="yieldCrimstone">Crimstone (gold pickaxe)</label><input id="yieldCrimstone" type="number" min="0.0001" step="0.01" value="1.60" /><span class="muted">шт./инструмент</span></div>
+            <div class="resource-row"><label for="yieldStone">Stone (деревянная кирка)</label><input id="yieldStone" type="number" min="0.0001" step="0.01" value="2.39" /><span class="muted">шт./инструмент</span></div>
+            <div class="resource-row"><label for="yieldIron">Iron (каменная кирка)</label><input id="yieldIron" type="number" min="0.0001" step="0.01" value="2.15" /><span class="muted">шт./инструмент</span></div>
+            <div class="resource-row"><label for="yieldGold">Gold (железная кирка)</label><input id="yieldGold" type="number" min="0.0001" step="0.01" value="1.80" /><span class="muted">шт./инструмент</span></div>
+            <div class="resource-row"><label for="yieldCrimstone">Crimstone (золотая кирка)</label><input id="yieldCrimstone" type="number" min="0.0001" step="0.01" value="1.60" /><span class="muted">шт./инструмент</span></div>
           </div>
           <div class="btn-row">
             <button id="refreshBtn">Обновить цены из API</button>
@@ -180,7 +180,7 @@
         </div>
 
         <div class="card section">
-          <h2>Результаты</h2><div class="help" style="margin-bottom:12px">Контейнер теперь растягивается почти на всю ширину окна, а таблица использует доступное пространство. Заголовки и значения переносятся аккуратно, максимум в три строки.</div>
+          <h2>Результаты</h2><div class="help" style="margin-bottom:12px">Для быстрой оценки эффективности добычи дерева и руды</div>
           <div class="table-wrap">
             <table>
               <thead>
