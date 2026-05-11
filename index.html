@@ -22,18 +22,18 @@
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: radial-gradient(circle at top right, rgba(56,189,248,0.12), transparent 28%), radial-gradient(circle at top left, rgba(34,197,94,0.12), transparent 32%), var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
-    .wrap { width: min(1480px, calc(100% - 32px)); margin: 24px auto 48px; padding-inline: 0; }
-    .hero { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, 380px); gap: 20px; margin-bottom: 20px; align-items: stretch; }
+    .wrap { width: calc(100% - 24px); max-width: none; margin: 12px auto 32px; padding-inline: 0; }
+    .hero { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; margin-bottom: 16px; align-items: stretch; }
     .card { background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-    .hero-main, .hero-side, .section { padding: 20px; }
+    .hero-main, .hero-side, .section { padding: 18px; }
     h1, h2, h3 { margin: 0 0 12px; }
     h1 { font-size: clamp(28px, 5vw, 44px); line-height: 1.05; }
     h2 { font-size: 20px; }
     p { margin: 0; color: var(--muted); line-height: 1.6; }
     .badge-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
     .badge { padding: 8px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); color: var(--text); font-size: 14px; }
-    .grid { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; align-items: start; }
-    .stack { display: grid; gap: 20px; min-width: 0; }
+    .grid { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 16px; align-items: start; }
+    .stack { display: grid; gap: 16px; min-width: 0; }
     .inputs { display: grid; gap: 14px; }
     .row { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 10px; align-items: center; }
     .row.small { grid-template-columns: minmax(0, 1fr) 110px; }
@@ -49,9 +49,9 @@
     .kpi .label { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
     .kpi .value { font-size: 22px; font-weight: 800; word-break: break-word; }
     .table-wrap { overflow-x: auto; overflow-y: hidden; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); width: 100%; max-width: 100%; display: block; -webkit-overflow-scrolling: touch; }
-    table { width: max-content; min-width: 1700px; border-collapse: collapse; table-layout: auto; }
-    th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); vertical-align: top; font-size: 13px; white-space: normal; word-break: normal; overflow-wrap: normal; }
-    th { color: #cbd5e1; background: rgba(255,255,255,0.03); position: sticky; top: 0; z-index: 1; }
+    table { width: 100%; min-width: 0; border-collapse: collapse; table-layout: fixed; }
+    th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); vertical-align: top; font-size: 13px; white-space: normal; word-break: normal; overflow-wrap: anywhere; }
+    th { color: #cbd5e1; background: rgba(255,255,255,0.03); position: sticky; top: 0; z-index: 1; vertical-align: bottom; }
     .good { color: var(--good); font-weight: 700; }
     .bad { color: var(--bad); font-weight: 700; }
     .warn { color: var(--warn); font-weight: 700; }
@@ -62,9 +62,13 @@
     .resource-row { display: grid; grid-template-columns: minmax(0, 1fr) 86px 92px; gap: 8px; align-items: center; }
     .pill { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06); font-size: 12px; color: #dbeafe; }
     .footer { margin-top: 18px; color: var(--muted); font-size: 13px; }
+    .head-clamp, .cell-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; line-height: 1.35; max-height: calc(1.35em * 3); white-space: normal; word-break: normal; overflow-wrap: anywhere; }
+    .head-clamp { font-weight: 700; }
+    .cell-center { text-align: left; }
+
     pre.debug { white-space:pre-wrap; word-break:break-word; background:#020617; padding:12px; border-radius:12px; border:1px solid #334155; color:#cbd5e1; font-size:12px; }
-    @media (max-width: 1260px) { .hero, .grid { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } table { width: max-content; min-width: 1500px; table-layout: auto; } }
-    @media (max-width: 760px) { .wrap { width: min(100% - 16px, 1480px); } .row, .resource-row { grid-template-columns: 1fr; } .btn-row, .kpis { grid-template-columns: 1fr; } .hero-main, .hero-side, .section { padding: 16px; } th, td { font-size: 12px; padding: 10px 8px; } table { min-width: 1350px; } }
+    @media (max-width: 1260px) { .hero, .grid { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } table { width: 100%; table-layout: fixed; } }
+    @media (max-width: 760px) { .wrap { width: calc(100% - 12px); } .row, .resource-row { grid-template-columns: 1fr; } .btn-row, .kpis { grid-template-columns: 1fr; } .hero-main, .hero-side, .section { padding: 16px; } th, td { font-size: 12px; padding: 10px 8px; } }
   </style>
 </head>
 <body>
@@ -176,30 +180,30 @@
         </div>
 
         <div class="card section">
-          <h2>Результаты</h2><div class="help" style="margin-bottom:12px">Таблица снова читабельная по ширине, а горизонтальная прокрутка должна оставаться только внутри её собственного блока.</div>
+          <h2>Результаты</h2><div class="help" style="margin-bottom:12px">Контейнер теперь растягивается почти на всю ширину окна, а таблица использует доступное пространство. Заголовки и значения переносятся аккуратно, максимум в три строки.</div>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Ресурс</th>
-                  <th>Купить с рынка, 1 ед.</th>
-                  <th>Цена продажи после комиссии</th>
-                  <th>Прямая COIN часть</th>
-                  <th>COIN часть с цепочкой</th>
-                  <th>COIN цепочка, FLOWER</th>
-                  <th>Полная цена инструмента, FLOWER</th>
-                  <th>Средний дроп</th>
-                  <th>Произвести по рынку, 1 ед.</th>
-                  <th>Произвести вручную, 1 ед.</th>
-                  <th>Активная себестоимость</th>
-                  <th>Мин. стоимость получения 1 ед.</th>
-                  <th>Лучший способ получить</th>
-                  <th>Что дешевле</th>
-                  <th>Профит на 1 ед.</th>
-                  <th>Профит на 1 инструмент</th>
-                  <th>ROI</th>
-                  <th>Решение</th>
-                  <th>Формула</th>
+                  <th><span class="head-clamp">Ресурс</span></th>
+                  <th><span class="head-clamp">Купить с рынка, 1 ед.</span></th>
+                  <th><span class="head-clamp">Цена продажи после комиссии</span></th>
+                  <th><span class="head-clamp">Прямая COIN часть</span></th>
+                  <th><span class="head-clamp">COIN часть с цепочкой</span></th>
+                  <th><span class="head-clamp">COIN цепочка, FLOWER</span></th>
+                  <th><span class="head-clamp">Полная цена инструмента, FLOWER</span></th>
+                  <th><span class="head-clamp">Средний дроп</span></th>
+                  <th><span class="head-clamp">Произвести по рынку, 1 ед.</span></th>
+                  <th><span class="head-clamp">Произвести вручную, 1 ед.</span></th>
+                  <th><span class="head-clamp">Активная себестоимость</span></th>
+                  <th><span class="head-clamp">Мин. стоимость получения 1 ед.</span></th>
+                  <th><span class="head-clamp">Лучший способ получить</span></th>
+                  <th><span class="head-clamp">Что дешевле</span></th>
+                  <th><span class="head-clamp">Профит на 1 ед.</span></th>
+                  <th><span class="head-clamp">Профит на 1 инструмент</span></th>
+                  <th><span class="head-clamp">ROI</span></th>
+                  <th><span class="head-clamp">Решение</span></th>
+                  <th><span class="head-clamp">Формула</span></th>
                 </tr>
               </thead>
               <tbody id="resultsBody"></tbody>
@@ -484,25 +488,25 @@
         }
         rows.push(`
           <tr>
-            <td><strong>${resource}</strong></td>
-            <td>${fmt(marketPrice, 6)}</td>
-            <td>${fmt(effectiveSellPrice, 6)}</td>
-            <td>${fmt(directCoin, 2)}</td>
-            <td>${fmt(chainCoin, 2)}</td>
-            <td>${fmt(chainCoinFlower, 6)}</td>
-            <td>${fmt(toolCost, 6)}</td>
-            <td>${fmt(yieldValue, 2)}</td>
-            <td>${fmt(marketUnitCost, 6)}</td>
-            <td>${fmt(selfUnitCost, 6)}</td>
-            <td>${fmt(unitCost, 6)}</td>
-            <td>${fmt(bestAcquisitionCost, 6)}</td>
-            <td class="${bestAcquisitionMethod === 'Купить ресурс' ? 'bad' : bestAcquisitionMethod === 'Производить по рынку' ? 'good' : bestAcquisitionMethod === 'Производить вручную' ? 'warn' : ''}">${bestAcquisitionMethod}</td>
-            <td class="${cheapestMode === 'Производить по рынку' ? 'good' : cheapestMode === 'Производить вручную' ? 'warn' : ''}">${cheapestMode}</td>
-            <td class="${profitPerUnit >= 0 ? 'good' : 'bad'}">${fmt(profitPerUnit, 6)}</td>
-            <td class="${profitPerTool >= 0 ? 'good' : 'bad'}">${fmt(profitPerTool, 6)}</td>
-            <td class="${roi >= 0 ? 'good' : 'bad'}">${pct(roi)}</td>
-            <td class="${cls}">${decision}</td>
-            <td class="formula">${buildFormula(resource, mode)}</td>
+            <td><div class="cell-clamp"><strong>${resource}</strong></div></td>
+            <td><div class="cell-clamp">${fmt(marketPrice, 6)}</div></td>
+            <td><div class="cell-clamp">${fmt(effectiveSellPrice, 6)}</div></td>
+            <td><div class="cell-clamp">${fmt(directCoin, 2)}</div></td>
+            <td><div class="cell-clamp">${fmt(chainCoin, 2)}</div></td>
+            <td><div class="cell-clamp">${fmt(chainCoinFlower, 6)}</div></td>
+            <td><div class="cell-clamp">${fmt(toolCost, 6)}</div></td>
+            <td><div class="cell-clamp">${fmt(yieldValue, 2)}</div></td>
+            <td><div class="cell-clamp">${fmt(marketUnitCost, 6)}</div></td>
+            <td><div class="cell-clamp">${fmt(selfUnitCost, 6)}</div></td>
+            <td><div class="cell-clamp">${fmt(unitCost, 6)}</div></td>
+            <td><div class="cell-clamp">${fmt(bestAcquisitionCost, 6)}</div></td>
+            <td class="${bestAcquisitionMethod === 'Купить ресурс' ? 'bad' : bestAcquisitionMethod === 'Производить по рынку' ? 'good' : bestAcquisitionMethod === 'Производить вручную' ? 'warn' : ''}"><div class="cell-clamp">${bestAcquisitionMethod}</div></td>
+            <td class="${cheapestMode === 'Производить по рынку' ? 'good' : cheapestMode === 'Производить вручную' ? 'warn' : ''}"><div class="cell-clamp">${cheapestMode}</div></td>
+            <td class="${profitPerUnit >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerUnit, 6)}</div></td>
+            <td class="${profitPerTool >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerTool, 6)}</div></td>
+            <td class="${roi >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${pct(roi)}</div></td>
+            <td class="${cls}"><div class="cell-clamp">${decision}</div></td>
+            <td class="formula"><div class="cell-clamp">${buildFormula(resource, mode)}</div></td>
           </tr>
         `);
       }
