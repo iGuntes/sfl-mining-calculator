@@ -1,0 +1,1 @@
+# sfl-mining-calculator
