@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SFL Mining Calculator Safe v3</title>
+  <style>
+    body{margin:0;font-family:Inter,system-ui,sans-serif;background:#0f172a;color:#e5e7eb}
+    .wrap{max-width:1280px;margin:0 auto;padding:24px}.card{background:#111827;border:1px solid #334155;border-radius:16px;padding:16px;margin:16px 0}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.muted{color:#94a3b8}.good{color:#22c55e}.bad{color:#ef4444}.warn{color:#f59e0b}
+    input,button{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:#e5e7eb}button{background:#22c55e;color:#052e16;font-weight:700;cursor:pointer}
+    table{width:100%;border-collapse:collapse;font-size:14px}th,td{border-bottom:1px solid #334155;padding:8px;text-align:left}th{background:#111827;position:sticky;top:0}
+    .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end}.mono{font-variant-numeric:tabular-nums}
+    pre{white-space:pre-wrap;word-break:break-word;background:#020617;padding:12px;border-radius:12px;border:1px solid #334155}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SFL Mining Calculator</h1>
+  <p class="muted">Используйте страницу через <code>http://127.0.0.1:8000/</code>, а не через открытие файла напрямую.</p>
+
+  <div class="card controls">
+    <div><label>Цена COIN в FLOWER</label><input id="coinPrice" type="number" step="0.000001" value="0.01"></div>
+    <div><label>Комиссия продажи, %</label><input id="marketFee" type="number" step="0.01" value="10"></div>
+    <div><label>Средний дроп Axe</label><input id="woodDrops" type="number" step="0.01" value="15"></div>
+    <div><label>Средний дроп Pickaxe</label><input id="stoneDrops" type="number" step="0.01" value="12"></div>
+    <div><label>Средний дроп Iron Pickaxe</label><input id="ironDrops" type="number" step="0.01" value="10"></div>
+    <div><label>Средний дроп Gold Pickaxe</label><input id="goldDrops" type="number" step="0.01" value="8"></div>
+    <div><label>Средний дроп Crimstone Hammer</label><input id="crimstoneDrops" type="number" step="0.01" value="7"></div>
+  </div>
+
+  <div class="card controls">
+    <button id="reloadBtn">Обновить цены</button>
+    <button id="debugBtn">Проверить /proxy/debug-prices</button>
+    <button id="demoBtn">Включить демо-цены</button>
+    <div id="status" class="muted">Ожидание загрузки…</div>
+  </div>
+
+  <div class="card">
+    <div style="overflow:auto"><table id="resultTable"><thead><tr><th>Ресурс</th><th>Цена рынка</th><th>После комиссии</th><th>Инструмент</th><th>Цена инструмента</th><th>Дроп</th><th>Себестоимость вручную</th><th>Лучший способ</th><th>Профит/ед.</th><th>ROI</th></tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="card">
+    <h3>Диагностика</h3>
+    <pre id="debugOut">Пока пусто</pre>
+  </div>
+</div>
+<script>
+const API_URL = '/proxy/sfl-prices';
+const DEBUG_URL = '/proxy/debug-prices';
+const demoPrices = { Wood:0.08, Stone:0.19, Iron:1.1, Gold:4.9, Crimstone:18 };
+const CONFIG = [
+  { label:'Wood', tool:'Axe', toolCoinCost:5, drop:'woodDrops' },
+  { label:'Stone', tool:'Pickaxe', toolCoinCost:20, drop:'stoneDrops' },
+  { label:'Iron', tool:'Iron Pickaxe', toolCoinCost:100, drop:'ironDrops' },
+  { label:'Gold', tool:'Gold Pickaxe', toolCoinCost:500, drop:'goldDrops' },
+  { label:'Crimstone', tool:'Crimstone Hammer', toolCoinCost:2000, drop:'crimstoneDrops' },
+];
+function num(id){ return Number(document.getElementById(id).value || 0); }
+function fmt(v){ return Number(v || 0).toLocaleString('en-US',{ maximumFractionDigits:6 }); }
+function normalize(raw){
+  if(Array.isArray(raw)){ const out={}; for(const item of raw){ const k=item?.symbol||item?.item||item?.name; const v=Number(item?.price ?? item?.floorPrice ?? item?.amount ?? item?.value); if(k && Number.isFinite(v)) out[k]=v; } return out; }
+  if(raw && typeof raw==='object'){ const out={}; for(const [k,v] of Object.entries(raw)){ if(typeof v==='number') out[k]=v; else if(v && typeof v==='object'){ const n=Number(v.price ?? v.floorPrice ?? v.amount ?? v.value); if(Number.isFinite(n)) out[k]=n; } } return out; }
+  return {};
+}
+async function loadPrices(){
+  const r = await fetch(API_URL, { headers:{ Accept:'application/json' } });
+  const text = await r.text();
+  let json;
+  try { json = JSON.parse(text); } catch(e) { throw new Error('Ответ не JSON: ' + text.slice(0,200)); }
+  if(!r.ok) throw new Error('HTTP ' + r.status + ': ' + text.slice(0,200));
+  return normalize(json);
+}
+function render(prices){
+  const fee=num('marketFee')/100, coin=num('coinPrice');
+  const tbody=document.querySelector('#resultTable tbody'); tbody.innerHTML='';
+  for(const item of CONFIG){
+    const market=Number(prices[item.label] || 0);
+    const after=market*(1-fee);
+    const tool=item.toolCoinCost*coin;
+    const drop=Math.max(num(item.drop), 0.000001);
+    const manual=tool/drop;
+    const best=manual < market ? 'Добывать вручную' : 'Купить на рынке';
+    const profit=after - Math.min(manual, market || Infinity);
+    const roi=tool>0 ? (profit*drop/tool)*100 : 0;
+    const cls=profit>0?'good':profit<0?'bad':'warn';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${item.label}</td><td class="mono">${fmt(market)}</td><td class="mono">${fmt(after)}</td><td>${item.tool}</td><td class="mono">${fmt(tool)}</td><td class="mono">${fmt(drop)}</td><td class="mono">${fmt(manual)}</td><td>${best}</td><td class="mono ${cls}">${fmt(profit)}</td><td class="mono ${cls}">${fmt(roi)}%</td>`;
+    tbody.appendChild(tr);
+  }
+}
+async function reload(){
+  const status=document.getElementById('status');
+  status.textContent='Загрузка цен через локальный прокси…';
+  try { const prices=await loadPrices(); render(prices); status.textContent='Цены загружены.'; }
+  catch(error){ render(demoPrices); status.textContent='Ошибка API, включены демо-цены: ' + error.message; }
+}
+async function debug(){
+  const out=document.getElementById('debugOut');
+  try { const r=await fetch(DEBUG_URL); out.textContent=await r.text(); }
+  catch(error){ out.textContent='Ошибка диагностики: ' + error.message; }
+}
+document.getElementById('reloadBtn').onclick=reload;
+document.getElementById('debugBtn').onclick=debug;
+document.getElementById('demoBtn').onclick=()=>{ render(demoPrices); document.getElementById('status').textContent='Включены демо-цены.'; };
+for(const i of document.querySelectorAll('input')) i.addEventListener('input', ()=>render(demoPrices));
+reload();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "sfl-mining-calculator",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server-safe-v3.js",
+  "scripts": {
+    "start": "node server-safe-v3.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
