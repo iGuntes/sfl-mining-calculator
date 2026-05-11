@@ -14,12 +14,18 @@ async function fetchUpstream() {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36'
     }
   });
+
   const text = await res.text();
   return { res, text };
 }
 
 app.get('/proxy/health', (_req, res) => {
-  res.json({ ok: true, pricesUrl: PRICES_URL, authRequired: false, staticDir: STATIC_DIR });
+  res.json({
+    ok: true,
+    pricesUrl: PRICES_URL,
+    authRequired: false,
+    staticDir: STATIC_DIR
+  });
 });
 
 app.get('/proxy/debug-prices', async (_req, res) => {
@@ -32,7 +38,10 @@ app.get('/proxy/debug-prices', async (_req, res) => {
       preview: text.slice(0, 1000)
     });
   } catch (error) {
-    res.status(502).json({ ok: false, error: error.message });
+    res.status(502).json({
+      ok: false,
+      error: error.message
+    });
   }
 });
 
@@ -40,19 +49,25 @@ app.get('/proxy/sfl-prices', async (_req, res) => {
   try {
     const { res: upstream, text } = await fetchUpstream();
     res.status(upstream.status);
+
     const type = upstream.headers.get('content-type');
     if (type) res.setHeader('content-type', type);
+
     res.setHeader('access-control-allow-origin', '*');
     res.send(text);
   } catch (error) {
-    res.status(502).json({ error: 'Bad Gateway', message: error.message });
+    res.status(502).json({
+      error: 'Bad Gateway',
+      message: error.message
+    });
   }
 });
 
 app.use(express.static(STATIC_DIR));
 
 app.get('*', (req, res) => {
-  const file = req.path === '/' ? 'sfl-mining-calculator-v14-restored-safe.html' : req.path.slice(1);
+  const file = req.path === '/' ? 'index.html' : req.path.slice(1);
+
   res.sendFile(path.join(STATIC_DIR, file), (err) => {
     if (err) res.status(404).send(`Not found: ${file}`);
   });
