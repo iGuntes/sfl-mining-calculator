@@ -57,7 +57,6 @@
     .warn { color: var(--warn); font-weight: 700; }
     .muted { color: var(--muted); }
     .note { margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); color: var(--muted); line-height: 1.6; font-size: 14px; }
-    .formula { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; color: #cbd5e1; white-space: normal; line-height: 1.45; min-width: 220px; }
     .resource-grid { display: grid; gap: 10px; }
     .resource-row { display: grid; grid-template-columns: minmax(0, 1fr) 86px 92px; gap: 8px; align-items: center; }
     .pill { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06); font-size: 12px; color: #dbeafe; }
@@ -65,7 +64,6 @@
     .head-clamp, .cell-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; line-height: 1.35; max-height: calc(1.35em * 3); white-space: normal; word-break: normal; overflow-wrap: anywhere; }
     .head-clamp { font-weight: 700; }
     .cell-center { text-align: left; }
-
     pre.debug { white-space:pre-wrap; word-break:break-word; background:#020617; padding:12px; border-radius:12px; border:1px solid #334155; color:#cbd5e1; font-size:12px; }
     @media (max-width: 1260px) { .hero, .grid { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } table { width: 100%; table-layout: fixed; } }
     @media (max-width: 760px) { .wrap { width: calc(100% - 12px); } .row, .resource-row { grid-template-columns: 1fr; } .btn-row, .kpis { grid-template-columns: 1fr; } .hero-main, .hero-side, .section { padding: 16px; } th, td { font-size: 12px; padding: 10px 8px; } }
@@ -76,10 +74,10 @@
     <section class="hero">
       <div class="card hero-main">
         <h1>SFL калькулятор выгодности добычи</h1>
-        <p>Сравнивает ручную добычу Wood / Stone / Iron / Gold / Crimstone против покупки на рынке в FLOWER. Цены ресурсов подтягиваются из SFL World API через локальный прокси, а средний дроп ресурса с 1 инструмента ты задаёшь сам.</p>
+        <p>Сравнивает ручную добычу Wood / Stone / Iron / Gold / Crimstone против покупки на рынке в FLOWER. Цены ресурсов подтягиваются из SFL World API</p>
         <div class="badge-row">
-          <div class="badge">Источник цен: только SFL World</div>
-          <div class="badge">Режим: market / self / hybrid</div>
+          <div class="badge">Источник цен: SFL World</div>
+          <div class="badge">Режим: Рынок / Добыча / Гибрид</div>
           <div class="badge">Профит на 1 ресурс и на 1 инструмент</div>
         </div>
       </div>
@@ -89,7 +87,7 @@
           <div class="pill" id="apiStatus">Ожидание загрузки…</div>
           <div><strong>Обновлено:</strong> <span class="muted" id="updatedAt">—</span></div>
           <div><strong>Активный рынок:</strong> <span class="muted" id="activeSourceLabel">p2p</span></div>
-          <div><strong>Комментарий:</strong> <span class="muted">Используется безопасный режим без Bearer token и без official marketplace.</span></div>
+         
         </div>
       </div>
     </section>
@@ -125,7 +123,7 @@
             <div class="row small">
               <div>
                 <label for="chainModel">Модель цепочки</label>
-                <div class="help">По среднему дропу — стоимость предыдущих звеньев делится на твой средний выход ресурса. Фиксированный рецепт — жёсткая COIN-стоимость инструмента по рецепту без деления на дроп.</div>
+                <div class="help">По среднему дропу — стоимость предыдущих звеньев делится на твой средний выход ресурса. Фиксированный рецепт — жёсткая COIN‑стоимость инструмента по рецепту без деления на дроп.</div>
               </div>
               <select id="chainModel">
                 <option value="yield">По среднему дропу</option>
@@ -174,36 +172,30 @@
       <div class="stack">
         <div class="kpis">
           <div class="card kpi"><div class="label">Выгодно добывать</div><div class="value" id="profitableCount">0</div></div>
-          <div class="card kpi"><div class="label">Дешевле купить</div><div class="value" id="buyCount">0</div></div>
+          <div class="card kpi"><div class="label">Дешевле покупать</div><div class="value" id="buyCount">0</div></div>
           <div class="card kpi"><div class="label">Лучший профит / ед.</div><div class="value" id="bestProfit">—</div></div>
           <div class="card kpi"><div class="label">Лучший ресурс</div><div class="value" id="bestResource">—</div></div>
         </div>
 
         <div class="card section">
-          <h2>Результаты</h2><div class="help" style="margin-bottom:12px">Для быстрой оценки эффективности добычи дерева и руды</div>
+          <h2>Результаты</h2>
+          <div class="help" style="margin-bottom:12px">Для быстрой оценки эффективности добычи дерева и руды</div>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th><span class="head-clamp">Ресурс</span></th>
-                  <th><span class="head-clamp">Купить с рынка, 1 ед.</span></th>
-                  <th><span class="head-clamp">Цена продажи после комиссии</span></th>
-                  <th><span class="head-clamp">Прямая COIN часть</span></th>
-                  <th><span class="head-clamp">COIN часть с цепочкой</span></th>
-                  <th><span class="head-clamp">COIN цепочка, FLOWER</span></th>
-                  <th><span class="head-clamp">Полная цена инструмента, FLOWER</span></th>
-                  <th><span class="head-clamp">Средний дроп</span></th>
-                  <th><span class="head-clamp">Произвести по рынку, 1 ед.</span></th>
-                  <th><span class="head-clamp">Произвести вручную, 1 ед.</span></th>
-                  <th><span class="head-clamp">Активная себестоимость</span></th>
-                  <th><span class="head-clamp">Мин. стоимость получения 1 ед.</span></th>
+                  <th><span class="head-clamp">Покупка</span></th>
+                  <th><span class="head-clamp">Продажа</span></th>
+                  <th><span class="head-clamp">Себестоимость</span></th>
+				  <th><span class="head-clamp">Инструмент</span></th>
+
                   <th><span class="head-clamp">Лучший способ получить</span></th>
-                  <th><span class="head-clamp">Что дешевле</span></th>
                   <th><span class="head-clamp">Профит на 1 ед.</span></th>
                   <th><span class="head-clamp">Профит на 1 инструмент</span></th>
                   <th><span class="head-clamp">ROI</span></th>
-                  <th><span class="head-clamp">Решение</span></th>
-                  <th><span class="head-clamp">Формула</span></th>
+                  <th><span class="head-clamp">Совет для продажи</span></th>
+                  <th><span class="head-clamp">Роль в цепочке</span></th>
                 </tr>
               </thead>
               <tbody id="resultsBody"></tbody>
@@ -211,14 +203,18 @@
           </div>
           <div class="note" id="summaryNote">Загрузка цен…</div>
           <div class="note" id="fallbackNote" style="display:none; margin-top:10px;"></div>
-          <div class="note">Подсказка по логике: <strong>Лучший способ получить</strong> — это как дешевле получить ресурс для себя прямо сейчас. <strong>Решение</strong> — это выгодно ли добывать этот ресурс именно на продажу по текущей цене после комиссии. Поэтому сочетание «Производить вручную» + «Дешевле купить» означает: для собственного использования ресурс дешевле сделать самому, но для заработка на продаже его добывать невыгодно.</div>
-          <div class="footer">Логика: колонка Купить с рынка показывает прямую цену покупки ресурса на рынке. Колонка Произвести по рынку показывает себестоимость производства с рыночной оценкой ингредиентов, а Произвести вручную — себестоимость через твою собственную цепочку добычи. Теперь доступно две модели цепочки: «По среднему дропу» — как в v14, и «Фиксированный рецепт» — жёсткая COIN-стоимость рецепта без деления на дроп.</div>
+          <div class="note">
+            Подсказка по логике: <strong>«Лучший способ получить»</strong> — это как дешевле получить ресурс для себя прямо сейчас. <strong>«Совет для продажи»</strong> — это рекомендация: имеет ли смысл добывать этот ресурс именно для продажи по текущей цене после комиссии.
+          </div>
+          <div class="footer">
+            Логика: «Купить с рынка» показывает прямую цену покупки ресурса на рынке. «Себестоимость» — это стоимость производства 1 ед. ресурса по выбранной модели цепочки. «Роль в цепочке» описывает, как именно ресурс может быть полезен: как сырьё, для собственного использования или для продажи.
+          </div>
         </div>
 
         <div class="card section">
           <h2>Диагностика API</h2>
           <div class="btn-row">
-            <button id="debugBtn">Проверить /proxy/debug-prices</button>
+            <button id="debugBtn">Проверка (Цены)</button>
           </div>
           <pre id="debugOut" class="debug">Пока пусто</pre>
         </div>
@@ -258,7 +254,13 @@
       debugOut: document.getElementById("debugOut")
     };
 
-    const FALLBACK_P2P = {"Wood": 0.011986, "Stone": 0.020139, "Iron": 0.07709756, "Gold": 0.3068, "Crimstone": 0.6207};
+    const FALLBACK_P2P = {
+      "Wood": 0.011986,
+      "Stone": 0.020139,
+      "Iron": 0.07709756,
+      "Gold": 0.3068,
+      "Crimstone": 0.6207
+    };
     const FALLBACK_UPDATED_TEXT = "fallback snapshot";
     let marketData = { p2p: {}, seq: {}, updatedAt: null, updated_text: null };
 
@@ -434,7 +436,7 @@
           Gold: `(3×Wood + 5×Iron + 64 / coinRate) / ${fmt(y, 2)}`,
           Crimstone: `(3×Wood + 3×Gold + 80 / coinRate) / ${fmt(y, 2)}`
         };
-        return `${formulas[resource]}<br><span class="muted">COIN-цепочка (${chainLabel}): ${buildChainFormula(resource)}</span>`;
+        return `${formulas[resource]}<br><span class="muted">COIN‑цепочка (${chainLabel}): ${buildChainFormula(resource)}</span>`;
       }
       const formulas = {
         Wood: `(16 / coinRate) / ${fmt(y, 2)}`,
@@ -443,7 +445,7 @@
         Gold: `(3×M_Wood + 5×M_Iron + 64 / coinRate) / ${fmt(y, 2)}`,
         Crimstone: `(3×M_Wood + 3×M_Gold + 80 / coinRate) / ${fmt(y, 2)}`
       };
-      return `${formulas[resource]}<br><span class="muted">COIN-цепочка (${chainLabel}): ${buildChainFormula(resource)}</span>`;
+      return `${formulas[resource]}<br><span class="muted">COIN‑цепочка (${chainLabel}): ${buildChainFormula(resource)}</span>`;
     }
     function recalc() {
       const mode = els.costMode.value;
@@ -455,18 +457,17 @@
       let profitableCount = 0;
       let buyCount = 0;
       let best = { resource: null, profit: -Infinity };
+
       for (const resource of RESOURCE_ORDER) {
         const marketPrice = getPrice(resource);
         const effectiveSellPrice = getEffectiveSellPrice(resource);
         const yieldValue = getYield(resource);
-        const directCoin = directCoinPart[resource];
-        const chainCoin = chainCoinPart[resource];
-        const chainCoinFlower = chainCoinFlowerPart[resource];
-        const toolCost = toolCosts[resource];
+
+        const profitFromSell = effectiveSellPrice - marketPrice;
         const marketUnitCost = marketCostsData.toolCosts[resource] / yieldValue;
         const selfUnitCost = selfCostsData.mineUnitCosts[resource];
         const unitCost = basisMode === 'market' ? marketUnitCost : selfUnitCost;
-        const cheapestMode = Number.isFinite(marketUnitCost) && Number.isFinite(selfUnitCost) ? (marketUnitCost < selfUnitCost ? 'Производить по рынку' : selfUnitCost < marketUnitCost ? 'Производить вручную' : 'Одинаково') : '—';
+
         const acquisitionOptions = [
           { label: 'Купить ресурс', value: marketPrice },
           { label: 'Производить по рынку', value: marketUnitCost },
@@ -475,70 +476,100 @@
         const bestAcquisitionCost = acquisitionOptions.length ? Math.min(...acquisitionOptions.map(option => option.value)) : NaN;
         const bestAcquisitionWinners = acquisitionOptions.filter(option => Math.abs(option.value - bestAcquisitionCost) < 1e-12);
         const bestAcquisitionMethod = !acquisitionOptions.length ? '—' : bestAcquisitionWinners.length > 1 ? 'Одинаково' : bestAcquisitionWinners[0].label;
+
         const profitPerUnit = effectiveSellPrice - unitCost;
         const profitPerTool = profitPerUnit * yieldValue;
         const roi = unitCost > 0 ? (profitPerUnit / unitCost) * 100 : NaN;
-        let decision = 'Нет данных';
-        let cls = 'warn';
+
+        let adviceForSale = '—';
+        let adviceClass = 'warn';
+        let roleInChain = '—';
+
+        // 1. Для продажи
         if (Number.isFinite(effectiveSellPrice) && Number.isFinite(unitCost)) {
-          if (profitPerUnit > 0.0000000001) { decision = 'Выгодно добывать'; cls = 'good'; profitableCount += 1; }
-          else if (profitPerUnit < -0.0000000001) { decision = 'Дешевле купить'; cls = 'bad'; buyCount += 1; }
-          else { decision = 'Около нуля'; cls = 'warn'; }
+          if (profitPerUnit > 0.0000000001) {
+            adviceForSale = 'Добывать для продажи';
+            adviceClass = 'good';
+            profitableCount += 1;
+            roleInChain = 'Добывать и продавать';
+          } else if (profitPerUnit < -0.0000000001) {
+            adviceForSale = 'Дешевле покупать';
+            adviceClass = 'bad';
+            buyCount += 1;
+            roleInChain = 'Покупать как сырьё';
+          } else {
+            adviceForSale = 'Нет смысла добывать под продажу';
+            adviceClass = 'warn';
+            roleInChain = 'Практически без разницы';
+          }
+
           if (profitPerUnit > best.profit) best = { resource, profit: profitPerUnit };
         }
+
+        // 2. Для себя (основной способ получения)
+        const selfIsCheaperToOwn = Number.isFinite(selfUnitCost)
+          && Number.isFinite(marketPrice)
+          && selfUnitCost < marketPrice;
+
+        if (roleInChain === 'Добывать и продавать' || roleInChain === 'Покупать как сырьё') {
+          if (selfIsCheaperToOwn) {
+            if (roleInChain === 'Добывать и продавать') {
+              roleInChain = 'Добывать и продавать; для себя выгоднее добывать';
+            } else {
+              roleInChain = 'Покупать как сырьё; для себя выгоднее добывать';
+            }
+          } else {
+            if (roleInChain === 'Добывать и продавать') {
+              roleInChain = 'Добывать и продавать; для себя выгоднее покупать';
+            } else {
+              roleInChain = 'Покупать как сырьё; для себя выгоднее покупать';
+            }
+          }
+        }
+
         rows.push(`
           <tr>
             <td><div class="cell-clamp"><strong>${resource}</strong></div></td>
             <td><div class="cell-clamp">${fmt(marketPrice, 6)}</div></td>
             <td><div class="cell-clamp">${fmt(effectiveSellPrice, 6)}</div></td>
-            <td><div class="cell-clamp">${fmt(directCoin, 2)}</div></td>
-            <td><div class="cell-clamp">${fmt(chainCoin, 2)}</div></td>
-            <td><div class="cell-clamp">${fmt(chainCoinFlower, 6)}</div></td>
-            <td><div class="cell-clamp">${fmt(toolCost, 6)}</div></td>
-            <td><div class="cell-clamp">${fmt(yieldValue, 2)}</div></td>
-            <td><div class="cell-clamp">${fmt(marketUnitCost, 6)}</div></td>
-            <td><div class="cell-clamp">${fmt(selfUnitCost, 6)}</div></td>
-            <td><div class="cell-clamp">${fmt(unitCost, 6)}</div></td>
-            <td><div class="cell-clamp">${fmt(bestAcquisitionCost, 6)}</div></td>
+            <td class="${unitCost >= bestAcquisitionCost - 0.000001 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(unitCost, 6)}</div></td>
+            <td class="${toolCosts[resource] < 9999999 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(toolCosts[resource], 6)}</div></td>            
             <td class="${bestAcquisitionMethod === 'Купить ресурс' ? 'bad' : bestAcquisitionMethod === 'Производить по рынку' ? 'good' : bestAcquisitionMethod === 'Производить вручную' ? 'warn' : ''}"><div class="cell-clamp">${bestAcquisitionMethod}</div></td>
-            <td class="${cheapestMode === 'Производить по рынку' ? 'good' : cheapestMode === 'Производить вручную' ? 'warn' : ''}"><div class="cell-clamp">${cheapestMode}</div></td>
             <td class="${profitPerUnit >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerUnit, 6)}</div></td>
             <td class="${profitPerTool >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerTool, 6)}</div></td>
             <td class="${roi >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${pct(roi)}</div></td>
-            <td class="${cls}"><div class="cell-clamp">${decision}</div></td>
-            <td class="formula"><div class="cell-clamp">${buildFormula(resource, mode)}</div></td>
+            <td class="${adviceClass}"><div class="cell-clamp">${adviceForSale}</div></td>
+            <td class="${profitPerUnit > 0 ? 'good' : profitPerUnit < 0 ? 'bad' : 'warn'}"><div class="cell-clamp">${roleInChain}</div></td>
           </tr>
         `);
       }
+
       els.resultsBody.innerHTML = rows.join('');
       els.profitableCount.textContent = String(profitableCount);
       els.buyCount.textContent = String(buyCount);
       els.bestProfit.textContent = Number.isFinite(best.profit) ? fmt(best.profit, 6) : '—';
       els.bestResource.textContent = best.resource || '—';
+
       const summary = [];
       const chainModeLabel = (els.chainModel?.value || 'yield') === 'fixed' ? 'Фиксированный рецепт' : 'По среднему дропу';
-      summary.push(`Рынок: ${els.source.value}.`);
       const modeLabel = mode === 'market' ? 'Рыночная база' : mode === 'self' ? 'Собственная добыча' : 'Гибрид';
-      summary.push(`Модель себестоимости: ${modeLabel}.`);
-      summary.push(`Модель цепочки: ${chainModeLabel}.`);
-      if (mode === 'hybrid') summary.push('Гибрид считает ингредиенты инструмента по твоей собственной цепочке добычи, но итоговую выгоду сравнивает с рыночной ценой продажи.');
-      summary.push('В таблице одновременно показаны: купить готовый ресурс с рынка, произвести по рынку и произвести вручную, а также минимальная стоимость получения 1 ед. и лучший способ получения.');
-      if (els.source.value === 'p2p') summary.push(`Комиссия P2P: ${fmt(num(els.p2pFee.value) * 100, 1)}%.`); else summary.push('Комиссия P2P не применяется.');
-      summary.push(`Курс: 1 FLOWER = ${fmt(num(els.coinRate.value), 2)} COIN.`);
-      if (best.resource && Number.isFinite(best.profit)) summary.push(`Максимальный профит на 1 ресурс сейчас у ${best.resource}: ${fmt(best.profit, 6)} FLOWER.`);
-      const sourceBucket = marketData[els.source.value] || {};
-      const usesFallback = els.source.value === 'p2p' && Object.keys(sourceBucket).length === 0;
+      summary.push(`Модель себестоимости: ${modeLabel}. Модель цепочки: ${chainModeLabel}.`);
+      if (mode === 'hybrid') {
+        summary.push('Гибрид считает ингредиенты инструмента по твоей собственной цепочке, но итоговую выгоду сравнивает с рыночной ценой продажи.');
+      }
+      if (Number.isFinite(best.profit)) {
+        summary.push(`Макс. профит на 1 ед.: ${best.resource} — ${fmt(best.profit, 6)} FLOWER.`);
+      }
+      els.summaryNote.textContent = summary.join(' ');
+
+      const usesFallback = els.source.value === 'p2p' && Object.keys(marketData[els.source.value] || {}).length === 0;
       if (usesFallback) {
-        summary.push('Живой ответ API не загрузился, поэтому для p2p используется встроенный снимок.');
         els.fallbackNote.style.display = 'block';
         els.fallbackNote.textContent = `Fallback p2p snapshot: Wood ${fmt(FALLBACK_P2P.Wood, 6)}, Stone ${fmt(FALLBACK_P2P.Stone, 6)}, Iron ${fmt(FALLBACK_P2P.Iron, 6)}, Gold ${fmt(FALLBACK_P2P.Gold, 6)}, Crimstone ${fmt(FALLBACK_P2P.Crimstone, 6)}.`;
       } else {
         els.fallbackNote.style.display = 'none';
         els.fallbackNote.textContent = '';
       }
-      if (els.source.value === 'seq' && Object.keys(sourceBucket).length === 0) summary.push('В выбранном источнике пока нет цен для расчёта.');
-      els.summaryNote.textContent = summary.join(' ');
-      els.activeSourceLabel.textContent = els.source.value;
     }
     async function loadSflWorldPrices() {
       const res = await fetch('/proxy/sfl-prices', { headers: { Accept: 'application/json' } });
