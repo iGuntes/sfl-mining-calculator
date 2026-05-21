@@ -532,9 +532,8 @@
             <td><div class="cell-clamp"><strong>${resource}</strong></div></td>
             <td><div class="cell-clamp">${fmt(marketPrice, 6)}</div></td>
             <td><div class="cell-clamp">${fmt(effectiveSellPrice, 6)}</div></td>
-            <td class="${toolCosts[resource] < 9999999 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(toolCosts[resource], 6)}</div></td>
             <td class="${unitCost >= bestAcquisitionCost - 0.000001 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(unitCost, 6)}</div></td>
-            
+            <td class="${toolCosts[resource] < 9999999 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(toolCosts[resource], 6)}</div></td>            
             <td class="${bestAcquisitionMethod === 'Купить ресурс' ? 'bad' : bestAcquisitionMethod === 'Производить по рынку' ? 'good' : bestAcquisitionMethod === 'Производить вручную' ? 'warn' : ''}"><div class="cell-clamp">${bestAcquisitionMethod}</div></td>
             <td class="${profitPerUnit >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerUnit, 6)}</div></td>
             <td class="${profitPerTool >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerTool, 6)}</div></td>
