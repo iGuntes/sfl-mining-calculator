@@ -79,7 +79,7 @@
     .optimal-toggle input { margin-top: 3px; accent-color: var(--accent); cursor: pointer; }
     .optimal-toggle strong { display: block; margin-bottom: 4px; }
     .cost-mode-disabled { opacity: 0.45; pointer-events: none; }
-    @media (max-width: 760px) { .wrap { width: calc(100% - 12px); } .row, .resource-row { grid-template-columns: 1fr; } .btn-row, .kpis { grid-template-columns: 1fr; } .hero-main, .hero-side, .section { padding: 16px; } th, td { font-size: 12px; padding: 10px 8px; } }
+    @media (max-width: 760px) { .col-mobile-hide { display: none !important; } .wrap { width: calc(100% - 12px); } .row, .resource-row { grid-template-columns: 1fr; } .btn-row, .kpis { grid-template-columns: 1fr; } .hero-main, .hero-side, .section { padding: 16px; } th, td { font-size: 12px; padding: 10px 8px; } }
   </style>
 </head>
 <body>
@@ -191,15 +191,15 @@
               <thead>
                 <tr>
                   <th><span class="th-title">Ресурс</span></th>
-                  <th><span class="th-title">Покупка</span></th>
-                  <th><span class="th-title">Продажа</span></th>
-                  <th><span class="th-title">Себестоимость</span><span class="th-hint">(<span id="unitCostModeHint">рыночная база</span>, наведите на значение)</span></th>
-                  <th><span class="th-title">Инструмент</span><span class="th-hint">(наведите на значение)</span></th>
-                  <th class="col-optimal"><span class="th-title">Откуда</span><span class="th-hint">(план цепочки)</span></th>
+                  <th class="col-mobile-hide"><span class="th-title">Покупка</span></th>
+                  <th class="col-mobile-hide"><span class="th-title">Продажа</span></th>
+                  <th class="col-mobile-hide"><span class="th-title">Себестоимость</span><span class="th-hint">(<span id="unitCostModeHint">рыночная база</span>, наведите на значение)</span></th>
+                  <th class="col-mobile-hide"><span class="th-title">Инструмент</span><span class="th-hint">(наведите на значение)</span></th>
+                  <th class="col-optimal col-mobile-hide"><span class="th-title">Откуда</span><span class="th-hint">(план цепочки)</span></th>
                   <th><span class="th-title">Лучший способ получить</span></th>
-                  <th><span class="th-title">Профит на 1 ед.</span></th>
-                  <th><span class="th-title">Профит на 1 инструмент</span></th>
-                  <th><span class="th-title">ROI</span></th>
+                  <th class="col-mobile-hide"><span class="th-title">Профит на 1 ед.</span></th>
+                  <th class="col-mobile-hide"><span class="th-title">Профит на 1 инструмент</span></th>
+                  <th class="col-mobile-hide"><span class="th-title">ROI</span></th>
                   <th><span class="th-title">Совет</span><span class="th-hint">(наведите на значение)</span></th>
                 </tr>
               </thead>
@@ -661,27 +661,27 @@
         rows.push(`
           <tr>
             <td><div class="cell-clamp"><strong>${resource}</strong></div></td>
-            <td><div class="cell-clamp">${fmt(marketPrice, 6)}</div></td>
-            <td><div class="cell-clamp">${fmt(effectiveSellPrice, 6)}</div></td>
-            <td class="${getUnitCostClass(unitCost, marketPrice)}">
+            <td class="col-mobile-hide"><div class="cell-clamp">${fmt(marketPrice, 6)}</div></td>
+            <td class="col-mobile-hide"><div class="cell-clamp">${fmt(effectiveSellPrice, 6)}</div></td>
+            <td  class="col-mobile-hide ${getUnitCostClass(unitCost, marketPrice)}">
               <span class="tooltip-trigger" tabindex="0" aria-label="Формула себестоимости ${resource}">
                 <span class="cell-clamp">${fmt(unitCost, 6)}</span>
                 <template class="tooltip-source">${unitTooltipHtml}</template>
               </span>
             </td>
-            <td>
+            <td class="col-mobile-hide">
               <span class="tooltip-trigger" tabindex="0" aria-label="Формула стоимости инструмента ${resource}">
                 <span class="cell-clamp">${fmt(toolCosts[resource], 6)}</span>
                 <template class="tooltip-source">${toolTooltipHtml}</template>
               </span>
             </td>
-            <td class="col-optimal ${optimalSource?.key === 'mine' ? 'good' : ''}">
+            <td class="col-mobile-hide col-optimal ${optimalSource?.key === 'mine' ? 'good' : ''}">
               ${useOptimal ? `<span class="tooltip-trigger" tabindex="0" aria-label="План цепочки ${resource}"><span>${optimalSource?.label || '—'}</span><template class="tooltip-source">${optimalPlanTooltipHtml}</template></span>` : '—'}
             </td>
             <td class="${bestAcquisitionMethod === 'Купить ресурс' ? 'bad' : bestAcquisitionMethod === 'Производить по рынку' ? 'good' : bestAcquisitionMethod === 'Производить вручную' ? 'warn' : ''}"><div class="cell-clamp">${bestAcquisitionMethod}</div></td>
-            <td class="${profitPerUnit >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerUnit, 6)}</div></td>
-            <td class="${profitPerTool >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerTool, 6)}</div></td>
-            <td class="${roi >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${pct(roi)}</div></td>
+            <td class="col-mobile-hide ${profitPerUnit >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerUnit, 6)}</div></td>
+            <td class="col-mobile-hide ${profitPerTool >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerTool, 6)}</div></td>
+            <td class="col-mobile-hide ${roi >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${pct(roi)}</div></td>
             <td class="${adviceClass}">
               <span class="tooltip-trigger" tabindex="0" aria-label="Совет ${resource}">
                 <span>${saleAdvice.short}</span>
