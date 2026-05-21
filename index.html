@@ -50,8 +50,10 @@
     .kpi .value { font-size: 22px; font-weight: 800; word-break: break-word; }
     .table-wrap { overflow-x: auto; overflow-y: hidden; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); width: 100%; max-width: 100%; display: block; -webkit-overflow-scrolling: touch; }
     table { width: 100%; min-width: 0; border-collapse: collapse; table-layout: fixed; }
-    th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); vertical-align: top; font-size: 13px; white-space: normal; word-break: normal; overflow-wrap: anywhere; }
-    th { color: #cbd5e1; background: rgba(255,255,255,0.03); position: sticky; top: 0; z-index: 1; vertical-align: bottom; }
+    th, td { padding: 10px 6px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.08); vertical-align: top; font-size: 13px; white-space: normal; word-break: normal; overflow-wrap: anywhere; }
+    th { color: #cbd5e1; background: rgba(255,255,255,0.03); position: sticky; top: 0; z-index: 1; line-height: 1.15; padding: 8px 6px; }
+    .th-title { display: block; font-weight: 700; line-height: 1.15; text-align: center; }
+    th .th-hint { font-weight: 400; font-size: 10px; font-style: italic; color: var(--muted); display: block; margin-top: 2px; line-height: 1.2; }
     .good { color: var(--good); font-weight: 700; }
     .bad { color: var(--bad); font-weight: 700; }
     .warn { color: var(--warn); font-weight: 700; }
@@ -61,11 +63,22 @@
     .resource-row { display: grid; grid-template-columns: minmax(0, 1fr) 86px 92px; gap: 8px; align-items: center; }
     .pill { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06); font-size: 12px; color: #dbeafe; }
     .footer { margin-top: 18px; color: var(--muted); font-size: 13px; }
+    .tooltip-trigger { cursor: help; border-bottom: 1px dotted rgba(255,255,255,0.35); display: inline-block; max-width: 100%; text-align: center; }
+    td .cell-clamp { margin-inline: auto; }
+    .tooltip-trigger:focus { outline: 2px solid rgba(56,189,248,0.55); outline-offset: 2px; border-radius: 4px; }
+    .formula-tooltip { position: fixed; z-index: 1000; max-width: min(380px, calc(100vw - 24px)); padding: 12px 14px; background: var(--panel-2); border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; box-shadow: var(--shadow); font-size: 12px; line-height: 1.55; color: var(--text); pointer-events: none; }
+    .formula-tooltip[hidden] { display: none !important; }
+    .formula-tooltip .tooltip-heading { font-weight: 700; margin-bottom: 6px; color: #e2e8f0; }
     .head-clamp, .cell-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; line-height: 1.35; max-height: calc(1.35em * 3); white-space: normal; word-break: normal; overflow-wrap: anywhere; }
-    .head-clamp { font-weight: 700; }
     .cell-center { text-align: left; }
     pre.debug { white-space:pre-wrap; word-break:break-word; background:#020617; padding:12px; border-radius:12px; border:1px solid #334155; color:#cbd5e1; font-size:12px; }
     @media (max-width: 1260px) { .hero, .grid { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } table { width: 100%; table-layout: fixed; } }
+    .col-optimal { display: none; }
+    body.optimal-chain-on .col-optimal { display: table-cell; }
+    .optimal-toggle { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(34,197,94,0.25); background: rgba(34,197,94,0.06); cursor: pointer; }
+    .optimal-toggle input { margin-top: 3px; accent-color: var(--accent); cursor: pointer; }
+    .optimal-toggle strong { display: block; margin-bottom: 4px; }
+    .cost-mode-disabled { opacity: 0.45; pointer-events: none; }
     @media (max-width: 760px) { .wrap { width: calc(100% - 12px); } .row, .resource-row { grid-template-columns: 1fr; } .btn-row, .kpis { grid-template-columns: 1fr; } .hero-main, .hero-side, .section { padding: 16px; } th, td { font-size: 12px; padding: 10px 8px; } }
   </style>
 </head>
@@ -76,7 +89,7 @@
         <h1>SFL калькулятор выгодности добычи</h1>
         <p>Сравнивает ручную добычу Wood / Stone / Iron / Gold / Crimstone против покупки на рынке в FLOWER. Цены ресурсов подтягиваются из SFL World API</p>
         <div class="badge-row">
-          <div class="badge">Источник цен: SFL World</div>
+          <div class="badge">Цены: P2P рынок (SFL World)</div>
           <div class="badge">Режим: Рынок / Добыча / Гибрид</div>
           <div class="badge">Профит на 1 ресурс и на 1 инструмент</div>
         </div>
@@ -86,8 +99,6 @@
         <div class="stack" style="gap:12px; margin-top: 8px;">
           <div class="pill" id="apiStatus">Ожидание загрузки…</div>
           <div><strong>Обновлено:</strong> <span class="muted" id="updatedAt">—</span></div>
-          <div><strong>Активный рынок:</strong> <span class="muted" id="activeSourceLabel">p2p</span></div>
-         
         </div>
       </div>
     </section>
@@ -97,44 +108,29 @@
         <div class="card section">
           <h2>Параметры</h2>
           <div class="inputs">
-            <div class="row small">
-              <div>
-                <label for="source">Источник цен</label>
-                <div class="help">Оставлен только безопасный источник через SFL World proxy.</div>
-              </div>
-              <select id="source">
-                <option value="p2p">p2p</option>
-                <option value="seq">seq</option>
-              </select>
-            </div>
-
-            <div class="row small">
+            <div class="row small" id="costModeRow">
               <div>
                 <label for="costMode">Модель себестоимости</label>
-                <div class="help">Рыночная база использует цены рынка на ингредиенты, Собственная добыча — внутреннюю себестоимость своей цепочки, Гибрид — собственную цепочку для крафта инструмента, но сравнение выгоды идёт с ценой продажи на рынке.</div>
+                <div class="help">Рыночная база — ингредиенты по ценам рынка. Собственная добыча — вся цепочка по вашему дропу.</div>
               </div>
               <select id="costMode">
                 <option value="market">Рыночная база</option>
                 <option value="self">Собственная добыча</option>
-                <option value="hybrid">Гибрид</option>
               </select>
             </div>
 
-            <div class="row small">
-              <div>
-                <label for="chainModel">Модель цепочки</label>
-                <div class="help">По среднему дропу — стоимость предыдущих звеньев делится на твой средний выход ресурса. Фиксированный рецепт — жёсткая COIN‑стоимость инструмента по рецепту без деления на дроп.</div>
-              </div>
-              <select id="chainModel">
-                <option value="yield">По среднему дропу</option>
-                <option value="fixed">Фиксированный рецепт</option>
-              </select>
-            </div>
+            <label class="optimal-toggle" for="optimalChain">
+              <input type="checkbox" id="optimalChain" />
+              <span>
+                <strong>Оптимальная цепочка</strong>
+                <span class="help">Отдельный расчёт: для каждого ресурса в цепочке выбирается дешевле — купить на рынке или добыть (с учётом уже выбранного плана для предыдущих звеньев). Не заменяет модель себестоимости — включается поверх.</span>
+              </span>
+            </label>
 
             <div class="row small">
               <div>
                 <label for="p2pFee">Комиссия продажи в P2P</label>
-                <div class="help">Применяется для p2p. Для seq комиссия не учитывается.</div>
+                <div class="help">Вычитается из цены продажи на P2P рынке.</div>
               </div>
               <select id="p2pFee">
                 <option value="0.10">10%</option>
@@ -171,8 +167,8 @@
 
       <div class="stack">
         <div class="kpis">
-          <div class="card kpi"><div class="label">Выгодно добывать</div><div class="value" id="profitableCount">0</div></div>
-          <div class="card kpi"><div class="label">Дешевле покупать</div><div class="value" id="buyCount">0</div></div>
+          <div class="card kpi"><div class="label">Выгодно продавать</div><div class="value" id="profitableCount">0</div></div>
+          <div class="card kpi"><div class="label">Убыточно продавать</div><div class="value" id="buyCount">0</div></div>
           <div class="card kpi"><div class="label">Лучший профит / ед.</div><div class="value" id="bestProfit">—</div></div>
           <div class="card kpi"><div class="label">Лучший ресурс</div><div class="value" id="bestResource">—</div></div>
         </div>
@@ -184,18 +180,17 @@
             <table>
               <thead>
                 <tr>
-                  <th><span class="head-clamp">Ресурс</span></th>
-                  <th><span class="head-clamp">Покупка</span></th>
-                  <th><span class="head-clamp">Продажа</span></th>
-                  <th><span class="head-clamp">Себестоимость</span></th>
-				  <th><span class="head-clamp">Инструмент</span></th>
-
-                  <th><span class="head-clamp">Лучший способ получить</span></th>
-                  <th><span class="head-clamp">Профит на 1 ед.</span></th>
-                  <th><span class="head-clamp">Профит на 1 инструмент</span></th>
-                  <th><span class="head-clamp">ROI</span></th>
-                  <th><span class="head-clamp">Совет для продажи</span></th>
-                  <th><span class="head-clamp">Роль в цепочке</span></th>
+                  <th><span class="th-title">Ресурс</span></th>
+                  <th><span class="th-title">Покупка</span></th>
+                  <th><span class="th-title">Продажа</span></th>
+                  <th><span class="th-title">Себестоимость</span><span class="th-hint">(<span id="unitCostModeHint">рыночная база</span>, наведите на значение)</span></th>
+                  <th><span class="th-title">Инструмент</span><span class="th-hint">(наведите на значение)</span></th>
+                  <th class="col-optimal"><span class="th-title">Откуда</span><span class="th-hint">(план цепочки)</span></th>
+                  <th><span class="th-title">Лучший способ получить</span></th>
+                  <th><span class="th-title">Профит на 1 ед.</span></th>
+                  <th><span class="th-title">Профит на 1 инструмент</span></th>
+                  <th><span class="th-title">ROI</span></th>
+                  <th><span class="th-title">Совет</span><span class="th-hint">(наведите на значение)</span></th>
                 </tr>
               </thead>
               <tbody id="resultsBody"></tbody>
@@ -204,10 +199,10 @@
           <div class="note" id="summaryNote">Загрузка цен…</div>
           <div class="note" id="fallbackNote" style="display:none; margin-top:10px;"></div>
           <div class="note">
-            Подсказка по логике: <strong>«Лучший способ получить»</strong> — это как дешевле получить ресурс для себя прямо сейчас. <strong>«Совет для продажи»</strong> — это рекомендация: имеет ли смысл добывать этот ресурс именно для продажи по текущей цене после комиссии.
+            Подсказка: <strong>Оптимальная цепочка</strong> — отдельный план (колонка «Откуда»). <strong>«Лучший способ получить»</strong> — сравнение трёх способов без связки цепочки. <strong>«Совет»</strong> — при наведении.
           </div>
           <div class="footer">
-            Логика: «Купить с рынка» показывает прямую цену покупки ресурса на рынке. «Себестоимость» — это стоимость производства 1 ед. ресурса по выбранной модели цепочки. «Роль в цепочке» описывает, как именно ресурс может быть полезен: как сырьё, для собственного использования или для продажи.
+            Логика: цены с P2P рынка. «Себестоимость»: зелёный — дешевле покупки, красный — дороже. «Откуда» (при включённой оптимальной цепочке): Купить / Добывать по плану. KPI — выгода <strong>продажи</strong>.
           </div>
         </div>
 
@@ -233,16 +228,16 @@
     };
 
     const els = {
-      source: document.getElementById("source"),
       costMode: document.getElementById("costMode"),
-      chainModel: document.getElementById("chainModel"),
+      costModeRow: document.getElementById("costModeRow"),
+      optimalChain: document.getElementById("optimalChain"),
       p2pFee: document.getElementById("p2pFee"),
       coinRate: document.getElementById("coinRate"),
       refreshBtn: document.getElementById("refreshBtn"),
       presetBtn: document.getElementById("presetBtn"),
       updatedAt: document.getElementById("updatedAt"),
       apiStatus: document.getElementById("apiStatus"),
-      activeSourceLabel: document.getElementById("activeSourceLabel"),
+      unitCostModeHint: document.getElementById("unitCostModeHint"),
       resultsBody: document.getElementById("resultsBody"),
       summaryNote: document.getElementById("summaryNote"),
       fallbackNote: document.getElementById("fallbackNote"),
@@ -262,7 +257,7 @@
       "Crimstone": 0.6207
     };
     const FALLBACK_UPDATED_TEXT = "fallback snapshot";
-    let marketData = { p2p: {}, seq: {}, updatedAt: null, updated_text: null };
+    let marketData = { p2p: {}, updatedAt: null, updated_text: null };
 
     function num(value) {
       const n = Number(value);
@@ -322,37 +317,140 @@
       return NaN;
     }
     function getPrice(resource) {
-      const source = els.source.value;
-      const bucket = marketData[source] || {};
-      const value = pickFromBucket(bucket, resource);
+      const value = pickFromBucket(marketData.p2p || {}, resource);
       if (Number.isFinite(value)) return value;
-      if (source === 'p2p') {
-        const fallbackValue = FALLBACK_P2P[resource];
-        if (Number.isFinite(fallbackValue)) return fallbackValue;
-      }
+      const fallbackValue = FALLBACK_P2P[resource];
+      if (Number.isFinite(fallbackValue)) return fallbackValue;
       return NaN;
     }
     function getEffectiveSellPrice(resource) {
       const gross = getPrice(resource);
       if (!Number.isFinite(gross)) return NaN;
-      if (!['p2p'].includes(els.source.value)) return gross;
       const fee = num(els.p2pFee.value);
       return gross * (1 - fee);
+    }
+    function getCostModeHint(mode) {
+      if (mode === 'market') return 'рыночная база';
+      return 'своя добыча';
+    }
+    function pickCheaperSource(buyPrice, mineUnitCost) {
+      const options = [];
+      if (Number.isFinite(buyPrice)) options.push({ key: 'buy', label: 'Купить', value: buyPrice });
+      if (Number.isFinite(mineUnitCost)) options.push({ key: 'mine', label: 'Добывать', value: mineUnitCost });
+      if (!options.length) return { key: 'none', label: '—', value: NaN };
+      return options.reduce((best, option) => (option.value < best.value ? option : best));
+    }
+    function getOptimalCosts() {
+      const directCoinPart = { Wood: 16, Stone: 16, Iron: 16, Gold: 64, Crimstone: 80 };
+      const chainCoinPart = getChainCoinCosts();
+      const chainCoinFlowerPart = {
+        Wood: coinToFlower(chainCoinPart.Wood),
+        Stone: coinToFlower(chainCoinPart.Stone),
+        Iron: coinToFlower(chainCoinPart.Iron),
+        Gold: coinToFlower(chainCoinPart.Gold),
+        Crimstone: coinToFlower(chainCoinPart.Crimstone)
+      };
+      const mineUnitCosts = {};
+      const toolCosts = {};
+      const sources = {};
+      const woodPick = pickCheaperSource(getPrice('Wood'), coinToFlower(directCoinPart.Wood) / getYield('Wood'));
+      mineUnitCosts.Wood = woodPick.value;
+      sources.Wood = woodPick;
+      toolCosts.Wood = coinToFlower(directCoinPart.Wood);
+      const stoneTool = 3 * mineUnitCosts.Wood + coinToFlower(directCoinPart.Stone);
+      const stonePick = pickCheaperSource(getPrice('Stone'), stoneTool / getYield('Stone'));
+      mineUnitCosts.Stone = stonePick.value;
+      sources.Stone = stonePick;
+      toolCosts.Stone = stoneTool;
+      const ironTool = 3 * mineUnitCosts.Wood + 5 * mineUnitCosts.Stone + coinToFlower(directCoinPart.Iron);
+      const ironPick = pickCheaperSource(getPrice('Iron'), ironTool / getYield('Iron'));
+      mineUnitCosts.Iron = ironPick.value;
+      sources.Iron = ironPick;
+      toolCosts.Iron = ironTool;
+      const goldTool = 3 * mineUnitCosts.Wood + 5 * mineUnitCosts.Iron + coinToFlower(directCoinPart.Gold);
+      const goldPick = pickCheaperSource(getPrice('Gold'), goldTool / getYield('Gold'));
+      mineUnitCosts.Gold = goldPick.value;
+      sources.Gold = goldPick;
+      toolCosts.Gold = goldTool;
+      const crimTool = 3 * mineUnitCosts.Wood + 3 * mineUnitCosts.Gold + coinToFlower(directCoinPart.Crimstone);
+      const crimPick = pickCheaperSource(getPrice('Crimstone'), crimTool / getYield('Crimstone'));
+      mineUnitCosts.Crimstone = crimPick.value;
+      sources.Crimstone = crimPick;
+      toolCosts.Crimstone = crimTool;
+      return { toolCosts, mineUnitCosts, sources, directCoinPart, chainCoinPart, chainCoinFlowerPart };
+    }
+    function getUnitCostClass(unitCost, marketPrice) {
+      if (!Number.isFinite(unitCost) || !Number.isFinite(marketPrice)) return '';
+      if (unitCost < marketPrice - 1e-9) return 'good';
+      if (unitCost > marketPrice + 1e-9) return 'bad';
+      return 'warn';
+    }
+    const SALE_TOOLTIPS = {
+      '—': {
+        short: '—',
+        summary: 'Недостаточно данных.',
+        sale: null,
+        self: null
+      },
+      'Добывать и продавать': {
+        short: 'Продажа',
+        summary: 'Добывай и продавай — на 1 ед. есть профит после комиссии.',
+        sale: 'Фарм под продажу выгоден.',
+        self: null
+      },
+      'Покупать как сырьё': {
+        short: 'Сырьё',
+        summary: 'Не добывай на продажу — в минусе. Нужен ресурс — покупай на рынке.',
+        sale: 'Добыть → продать дороже, чем купить, не получится.',
+        self: 'Для крафта тоже разумнее покупать (добыча не дешевле рынка).'
+      },
+      'Практически без разницы': {
+        short: 'Нейтрально',
+        summary: 'Под продажу смысла нет — профит около нуля.',
+        sale: 'Специально фармить не стоит.',
+        self: null
+      },
+      'Добывать и продавать; для себя выгоднее добывать': {
+        short: 'Продажа · добывать',
+        summary: 'Добывай на продажу и для себя — оба варианта дешевле покупки.',
+        sale: 'Фарм под продажу выгоден.',
+        self: 'Для крафта своей цепочки тоже выгоднее добывать, чем покупать.'
+      },
+      'Добывать и продавать; для себя выгоднее покупать': {
+        short: 'Продажа · покупать',
+        summary: 'На продажу — добывай; для своего крафта — покупай на рынке.',
+        sale: 'Фарм под продажу выгоден.',
+        self: 'Для себя дешевле купить, чем добывать.'
+      },
+      'Покупать как сырьё; для себя выгоднее добывать': {
+        short: 'Сырьё · добывать',
+        summary: 'На продажу не добывай (убыток). Для себя — добывай: дешевле, чем купить.',
+        sale: 'Продавать добытое невыгодно — цена продажи ниже себестоимости.',
+        self: 'Но для своих нужд (крафт) добыча всё же дешевле покупки на рынке.'
+      },
+      'Покупать как сырьё; для себя выгоднее покупать': {
+        short: 'Сырьё · покупать',
+        summary: 'Не добывай — покупай на рынке (и для продажи, и для себя).',
+        sale: 'Фарм под продажу убыточен.',
+        self: 'Для крафта покупка тоже выгоднее добычи.'
+      }
+    };
+    function getSaleAdviceDisplay(roleInChain) {
+      return SALE_TOOLTIPS[roleInChain] || { short: roleInChain, summary: roleInChain, sale: null, self: null };
+    }
+    function buildSaleAdviceTooltip(roleInChain) {
+      const t = getSaleAdviceDisplay(roleInChain);
+      let html = `<div class="tooltip-heading">Совет</div><strong>Итог:</strong> ${t.summary}`;
+      if (t.sale) html += `<br><strong>Продажа:</strong> ${t.sale}`;
+      if (t.self) html += `<br><strong>Для себя:</strong> ${t.self}`;
+      return html;
     }
     function coinToFlower(coins) {
       const rate = Math.max(0.0001, num(els.coinRate.value));
       return coins / rate;
     }
-    function getChainCoinCosts(chainModel = els.chainModel?.value || 'yield') {
+    function getChainCoinCosts() {
       const chainCoinPart = {};
-      if (chainModel === 'fixed') {
-        chainCoinPart.Wood = 16;
-        chainCoinPart.Stone = 3 * chainCoinPart.Wood + 16;
-        chainCoinPart.Iron = 3 * chainCoinPart.Wood + 5 * chainCoinPart.Stone + 16;
-        chainCoinPart.Gold = 3 * chainCoinPart.Wood + 5 * chainCoinPart.Iron + 64;
-        chainCoinPart.Crimstone = 3 * chainCoinPart.Wood + 3 * chainCoinPart.Gold + 80;
-        return chainCoinPart;
-      }
       const woodUnitCoin = 16 / getYield('Wood');
       chainCoinPart.Wood = 16;
       chainCoinPart.Stone = 3 * woodUnitCoin + 16;
@@ -365,8 +463,9 @@
       return chainCoinPart;
     }
     function getToolCosts(mode) {
+      if (mode === 'optimal') return getOptimalCosts();
       const directCoinPart = { Wood: 16, Stone: 16, Iron: 16, Gold: 64, Crimstone: 80 };
-      const chainCoinPart = getChainCoinCosts(els.chainModel?.value || 'yield');
+      const chainCoinPart = getChainCoinCosts();
       const chainCoinFlowerPart = {
         Wood: coinToFlower(chainCoinPart.Wood),
         Stone: coinToFlower(chainCoinPart.Stone),
@@ -405,54 +504,103 @@
       mineUnitCosts.Crimstone = toolCosts.Crimstone / getYield('Crimstone');
       return { toolCosts, mineUnitCosts, directCoinPart, chainCoinPart, chainCoinFlowerPart };
     }
-    function buildChainFormula(resource, chainModel = els.chainModel?.value || 'yield') {
-      if (chainModel === 'fixed') {
-        const formulas = {
-          Wood: `16`,
-          Stone: `3×16 + 16`,
-          Iron: `3×16 + 5×64 + 16`,
-          Gold: `3×16 + 5×384 + 64`,
-          Crimstone: `3×16 + 3×2032 + 80`
-        };
-        return formulas[resource];
-      }
-      const formulas = {
-        Wood: `16`,
-        Stone: `3×(16 / дроп Wood) + 16`,
-        Iron: `3×(16 / дроп Wood) + 5×(COIN Stone / дроп Stone) + 16`,
-        Gold: `3×(16 / дроп Wood) + 5×(COIN Iron / дроп Iron) + 64`,
-        Crimstone: `3×(16 / дроп Wood) + 3×(COIN Gold / дроп Gold) + 80`
-      };
-      return formulas[resource];
+    const TOOL_COIN = { Wood: 16, Stone: 16, Iron: 16, Gold: 64, Crimstone: 80 };
+    function coinFlowerExprCoins(coins) {
+      return `${coins} / coinRate`;
     }
-    function buildFormula(resource, mode) {
-      const y = getYield(resource);
-      const chainLabel = (els.chainModel?.value || 'yield') === 'fixed' ? 'Фиксированный рецепт' : 'По среднему дропу';
-      if (mode === 'market') {
-        const formulas = {
-          Wood: `(16 / coinRate) / ${fmt(y, 2)}`,
-          Stone: `(3×Wood + 16 / coinRate) / ${fmt(y, 2)}`,
-          Iron: `(3×Wood + 5×Stone + 16 / coinRate) / ${fmt(y, 2)}`,
-          Gold: `(3×Wood + 5×Iron + 64 / coinRate) / ${fmt(y, 2)}`,
-          Crimstone: `(3×Wood + 3×Gold + 80 / coinRate) / ${fmt(y, 2)}`
+    function describeToolExpression(resource, mode, costs) {
+      const { chainCoinPart, sources, mineUnitCosts } = costs;
+      if (mode === 'optimal') {
+        const src = (r) => sources[r]?.label || '—';
+        const unit = (r) => fmt(mineUnitCosts[r], 4);
+        if (resource === 'Wood') return `${coinFlowerExprCoins(TOOL_COIN.Wood)} / ${fmt(getYield('Wood'), 2)} <span class="muted">(${src('Wood')})</span>`;
+        const map = {
+          Stone: `3×${unit('Wood')} Wood + ${coinFlowerExprCoins(TOOL_COIN.Stone)} <span class="muted">(Wood: ${src('Wood')}, Stone: ${src('Stone')})</span>`,
+          Iron: `3×${unit('Wood')} + 5×${unit('Stone')} + ${coinFlowerExprCoins(TOOL_COIN.Iron)} <span class="muted">(Iron: ${src('Iron')})</span>`,
+          Gold: `3×${unit('Wood')} + 5×${unit('Iron')} + ${coinFlowerExprCoins(TOOL_COIN.Gold)} <span class="muted">(Gold: ${src('Gold')})</span>`,
+          Crimstone: `3×${unit('Wood')} + 3×${unit('Gold')} + ${coinFlowerExprCoins(TOOL_COIN.Crimstone)} <span class="muted">(Crimstone: ${src('Crimstone')})</span>`
         };
-        return `${formulas[resource]}<br><span class="muted">COIN‑цепочка (${chainLabel}): ${buildChainFormula(resource)}</span>`;
+        return map[resource];
       }
-      const formulas = {
-        Wood: `(16 / coinRate) / ${fmt(y, 2)}`,
-        Stone: `(3×M_Wood + 16 / coinRate) / ${fmt(y, 2)}`,
-        Iron: `(3×M_Wood + 5×M_Stone + 16 / coinRate) / ${fmt(y, 2)}`,
-        Gold: `(3×M_Wood + 5×M_Iron + 64 / coinRate) / ${fmt(y, 2)}`,
-        Crimstone: `(3×M_Wood + 3×M_Gold + 80 / coinRate) / ${fmt(y, 2)}`
+      if (resource === 'Wood') {
+        if (mode === 'market') return `${coinFlowerExprCoins(chainCoinPart.Wood)} <span class="muted">(COIN→FLOWER)</span>`;
+        return `${coinFlowerExprCoins(TOOL_COIN.Wood)}`;
+      }
+      const coinPart = (r) => coinFlowerExprCoins(TOOL_COIN[r]);
+      if (mode === 'market') {
+        const p = (r) => `цена ${r}`;
+        const map = {
+          Stone: `3×${p('Wood')} + ${coinPart('Stone')}`,
+          Iron: `3×${p('Wood')} + 5×${p('Stone')} + ${coinPart('Iron')}`,
+          Gold: `3×${p('Wood')} + 5×${p('Iron')} + ${coinPart('Gold')}`,
+          Crimstone: `3×${p('Wood')} + 3×${p('Gold')} + ${coinPart('Crimstone')}`
+        };
+        return map[resource];
+      }
+      const m = (r) => `M_${r} <span class="muted">(${fmt(costs.mineUnitCosts[r], 4)})</span>`;
+      const map = {
+        Stone: `3×${m('Wood')} + ${coinPart('Stone')}`,
+        Iron: `3×${m('Wood')} + 5×${m('Stone')} + ${coinPart('Iron')}`,
+        Gold: `3×${m('Wood')} + 5×${m('Iron')} + ${coinPart('Gold')}`,
+        Crimstone: `3×${m('Wood')} + 3×${m('Gold')} + ${coinPart('Crimstone')}`
       };
-      return `${formulas[resource]}<br><span class="muted">COIN‑цепочка (${chainLabel}): ${buildChainFormula(resource)}</span>`;
+      return map[resource];
+    }
+    function buildChainFormula(resource) {
+      const c = getChainCoinCosts();
+      const y = (r) => fmt(getYield(r), 2);
+      const map = {
+        Wood: '16',
+        Stone: `3×(16 / ${y('Wood')}) + 16 = ${fmt(c.Stone, 2)} COIN`,
+        Iron: `3×(16 / ${y('Wood')}) + 5×(${fmt(c.Stone, 2)} / ${y('Stone')}) + 16 = ${fmt(c.Iron, 2)} COIN`,
+        Gold: `3×(16 / ${y('Wood')}) + 5×(${fmt(c.Iron, 2)} / ${y('Iron')}) + 64 = ${fmt(c.Gold, 2)} COIN`,
+        Crimstone: `3×(16 / ${y('Wood')}) + 3×(${fmt(c.Gold, 2)} / ${y('Gold')}) + 80 = ${fmt(c.Crimstone, 2)} COIN`
+      };
+      return map[resource];
+    }
+    function buildFormula(resource, basisMode, kind = 'unit') {
+      const costs = getToolCosts(basisMode);
+      const y = getYield(resource);
+      const modeLabel = basisMode === 'optimal'
+        ? 'Оптимальная цепочка'
+        : basisMode === 'market' ? 'Рыночная база' : 'Собственная добыча';
+      const toolCost = costs.toolCosts[resource];
+      const unitCost = basisMode === 'market' ? toolCost / y : costs.mineUnitCosts[resource];
+      const shown = kind === 'tool' ? toolCost : unitCost;
+      const toolExpr = describeToolExpression(resource, basisMode, costs);
+      const mainExpr = kind === 'tool' ? toolExpr : `(${toolExpr}) / ${fmt(y, 2)}`;
+      const heading = kind === 'tool'
+        ? '<div class="tooltip-heading">Стоимость инструмента (FLOWER)</div>'
+        : '<div class="tooltip-heading">Себестоимость 1 ед. ресурса (FLOWER)</div>';
+      let html = `${heading}<span class="muted">${modeLabel}</span><br>${mainExpr}<br><span class="muted">= ${fmt(shown, 6)} FLOWER (как в таблице)</span>`;
+      if (basisMode === 'optimal' && costs.sources) {
+        const plan = RESOURCE_ORDER.map((r) => `${r}: ${costs.sources[r]?.label || '—'}`).join(' · ');
+        html += `<br><span class="muted">План цепочки: ${plan}</span>`;
+      } else {
+        html += `<br><span class="muted">COIN‑цепочка (по вашему дропу): ${buildChainFormula(resource)}</span>`;
+      }
+      return html;
+    }
+    function buildOptimalPlanTooltip(costs) {
+      const lines = RESOURCE_ORDER.map((r) => {
+        const src = costs.sources[r];
+        return `<strong>${r}:</strong> ${src?.label || '—'} (${fmt(src?.value, 6)} FLOWER / ед.)`;
+      });
+      return `<div class="tooltip-heading">План оптимальной цепочки</div>${lines.join('<br>')}<br><span class="muted">Ингредиенты для крафта берутся по лучшей цене звеньев выше.</span>`;
     }
     function recalc() {
+      const useOptimal = !!els.optimalChain?.checked;
       const mode = els.costMode.value;
-      const basisMode = mode === 'hybrid' ? 'self' : mode;
+      const basisMode = useOptimal ? 'optimal' : mode;
+      document.body.classList.toggle('optimal-chain-on', useOptimal);
+      if (els.costModeRow) els.costModeRow.classList.toggle('cost-mode-disabled', useOptimal);
+      if (els.unitCostModeHint) els.unitCostModeHint.textContent = useOptimal ? 'оптимальная цепочка' : getCostModeHint(mode);
       const marketCostsData = getToolCosts('market');
       const selfCostsData = getToolCosts('self');
-      const { toolCosts, mineUnitCosts, directCoinPart, chainCoinPart, chainCoinFlowerPart } = getToolCosts(basisMode);
+      const activeCostsData = getToolCosts(basisMode);
+      const { toolCosts, mineUnitCosts } = activeCostsData;
+      const optimalSources = activeCostsData.sources || null;
+      const optimalPlanTooltipHtml = useOptimal ? buildOptimalPlanTooltip(activeCostsData) : '';
       const rows = [];
       let profitableCount = 0;
       let buyCount = 0;
@@ -463,10 +611,12 @@
         const effectiveSellPrice = getEffectiveSellPrice(resource);
         const yieldValue = getYield(resource);
 
-        const profitFromSell = effectiveSellPrice - marketPrice;
         const marketUnitCost = marketCostsData.toolCosts[resource] / yieldValue;
+        const unitTooltipHtml = buildFormula(resource, basisMode, 'unit');
+        const toolTooltipHtml = buildFormula(resource, basisMode, 'tool');
         const selfUnitCost = selfCostsData.mineUnitCosts[resource];
-        const unitCost = basisMode === 'market' ? marketUnitCost : selfUnitCost;
+        const unitCost = basisMode === 'market' ? marketUnitCost : mineUnitCosts[resource];
+        const optimalSource = optimalSources?.[resource];
 
         const acquisitionOptions = [
           { label: 'Купить ресурс', value: marketPrice },
@@ -527,19 +677,39 @@
           }
         }
 
+        const saleAdvice = getSaleAdviceDisplay(roleInChain);
+        const saleAdviceTooltipHtml = buildSaleAdviceTooltip(roleInChain);
+
         rows.push(`
           <tr>
             <td><div class="cell-clamp"><strong>${resource}</strong></div></td>
             <td><div class="cell-clamp">${fmt(marketPrice, 6)}</div></td>
             <td><div class="cell-clamp">${fmt(effectiveSellPrice, 6)}</div></td>
-            <td class="${unitCost >= bestAcquisitionCost - 0.000001 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(unitCost, 6)}</div></td>
-            <td class="${toolCosts[resource] < 9999999 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(toolCosts[resource], 6)}</div></td>            
+            <td class="${getUnitCostClass(unitCost, marketPrice)}">
+              <span class="tooltip-trigger" tabindex="0" aria-label="Формула себестоимости ${resource}">
+                <span class="cell-clamp">${fmt(unitCost, 6)}</span>
+                <template class="tooltip-source">${unitTooltipHtml}</template>
+              </span>
+            </td>
+            <td>
+              <span class="tooltip-trigger" tabindex="0" aria-label="Формула стоимости инструмента ${resource}">
+                <span class="cell-clamp">${fmt(toolCosts[resource], 6)}</span>
+                <template class="tooltip-source">${toolTooltipHtml}</template>
+              </span>
+            </td>
+            <td class="col-optimal ${optimalSource?.key === 'mine' ? 'good' : ''}">
+              ${useOptimal ? `<span class="tooltip-trigger" tabindex="0" aria-label="План цепочки ${resource}"><span>${optimalSource?.label || '—'}</span><template class="tooltip-source">${optimalPlanTooltipHtml}</template></span>` : '—'}
+            </td>
             <td class="${bestAcquisitionMethod === 'Купить ресурс' ? 'bad' : bestAcquisitionMethod === 'Производить по рынку' ? 'good' : bestAcquisitionMethod === 'Производить вручную' ? 'warn' : ''}"><div class="cell-clamp">${bestAcquisitionMethod}</div></td>
             <td class="${profitPerUnit >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerUnit, 6)}</div></td>
             <td class="${profitPerTool >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerTool, 6)}</div></td>
             <td class="${roi >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${pct(roi)}</div></td>
-            <td class="${adviceClass}"><div class="cell-clamp">${adviceForSale}</div></td>
-            <td class="${profitPerUnit > 0 ? 'good' : profitPerUnit < 0 ? 'bad' : 'warn'}"><div class="cell-clamp">${roleInChain}</div></td>
+            <td class="${adviceClass}">
+              <span class="tooltip-trigger" tabindex="0" aria-label="Совет ${resource}">
+                <span>${saleAdvice.short}</span>
+                <template class="tooltip-source">${saleAdviceTooltipHtml}</template>
+              </span>
+            </td>
           </tr>
         `);
       }
@@ -551,18 +721,18 @@
       els.bestResource.textContent = best.resource || '—';
 
       const summary = [];
-      const chainModeLabel = (els.chainModel?.value || 'yield') === 'fixed' ? 'Фиксированный рецепт' : 'По среднему дропу';
-      const modeLabel = mode === 'market' ? 'Рыночная база' : mode === 'self' ? 'Собственная добыча' : 'Гибрид';
-      summary.push(`Модель себестоимости: ${modeLabel}. Модель цепочки: ${chainModeLabel}.`);
-      if (mode === 'hybrid') {
-        summary.push('Гибрид считает ингредиенты инструмента по твоей собственной цепочке, но итоговую выгоду сравнивает с рыночной ценой продажи.');
+      if (useOptimal) {
+        summary.push('Оптимальная цепочка: для каждого ресурса выбрано дешевле — купить или добыть (см. колонку «Откуда»).');
+      } else {
+        const modeLabel = mode === 'market' ? 'Рыночная база' : 'Собственная добыча';
+        summary.push(`Модель себестоимости: ${modeLabel}. Цепочка по вашему среднему дропу.`);
       }
       if (Number.isFinite(best.profit)) {
         summary.push(`Макс. профит на 1 ед.: ${best.resource} — ${fmt(best.profit, 6)} FLOWER.`);
       }
       els.summaryNote.textContent = summary.join(' ');
 
-      const usesFallback = els.source.value === 'p2p' && Object.keys(marketData[els.source.value] || {}).length === 0;
+      const usesFallback = Object.keys(marketData.p2p || {}).length === 0;
       if (usesFallback) {
         els.fallbackNote.style.display = 'block';
         els.fallbackNote.textContent = `Fallback p2p snapshot: Wood ${fmt(FALLBACK_P2P.Wood, 6)}, Stone ${fmt(FALLBACK_P2P.Stone, 6)}, Iron ${fmt(FALLBACK_P2P.Iron, 6)}, Gold ${fmt(FALLBACK_P2P.Gold, 6)}, Crimstone ${fmt(FALLBACK_P2P.Crimstone, 6)}.`;
@@ -576,7 +746,6 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       marketData.p2p = normalizeSflWorldBucket(json?.data?.p2p || json?.p2p || json || {});
-      marketData.seq = normalizeSflWorldBucket(json?.data?.seq || json?.seq || {});
       marketData.updatedAt = json?.updatedAt || null;
       marketData.updated_text = json?.updated_text || null;
     }
@@ -586,11 +755,9 @@
         await loadSflWorldPrices();
       } catch (error) {
         marketData.p2p = {};
-        marketData.seq = {};
       }
       const hasP2P = Object.keys(marketData.p2p).length > 0;
-      const hasSeq = Object.keys(marketData.seq).length > 0;
-      if (hasP2P || hasSeq) {
+      if (hasP2P) {
         els.updatedAt.textContent = marketData.updated_text || (marketData.updatedAt ? new Date(marketData.updatedAt).toLocaleString('ru-RU') : '—');
         els.apiStatus.textContent = 'SFL World API подключен';
       } else {
@@ -607,6 +774,54 @@
         els.debugOut.textContent = 'Ошибка диагностики: ' + error.message;
       }
     }
+    (function initFormulaTooltip() {
+      const tip = document.createElement('div');
+      tip.id = 'formulaTooltip';
+      tip.className = 'formula-tooltip';
+      tip.hidden = true;
+      tip.setAttribute('role', 'tooltip');
+      document.body.appendChild(tip);
+      let active = null;
+      function position(trigger) {
+        const r = trigger.getBoundingClientRect();
+        const margin = 8;
+        const maxLeft = window.innerWidth - tip.offsetWidth - margin;
+        tip.style.left = `${Math.max(margin, Math.min(r.left, maxLeft))}px`;
+        let top = r.top - tip.offsetHeight - margin;
+        if (top < margin) top = r.bottom + margin;
+        tip.style.top = `${top}px`;
+      }
+      function show(trigger) {
+        const tpl = trigger.querySelector('template.tooltip-source');
+        if (!tpl) return;
+        tip.innerHTML = tpl.innerHTML;
+        tip.hidden = false;
+        active = trigger;
+        requestAnimationFrame(() => position(trigger));
+      }
+      function hide() {
+        tip.hidden = true;
+        active = null;
+      }
+      els.resultsBody.addEventListener('mouseover', (e) => {
+        const tr = e.target.closest('.tooltip-trigger');
+        if (tr) show(tr);
+      });
+      els.resultsBody.addEventListener('mouseout', (e) => {
+        const tr = e.target.closest('.tooltip-trigger');
+        if (tr && !tr.contains(e.relatedTarget)) hide();
+      });
+      els.resultsBody.addEventListener('focusin', (e) => {
+        const tr = e.target.closest('.tooltip-trigger');
+        if (tr) show(tr);
+      });
+      els.resultsBody.addEventListener('focusout', (e) => {
+        const tr = e.target.closest('.tooltip-trigger');
+        if (tr && !tr.contains(e.relatedTarget)) hide();
+      });
+      window.addEventListener('scroll', () => { if (active) position(active); }, true);
+      window.addEventListener('resize', () => { if (active) position(active); });
+    })();
     document.querySelectorAll('input, select').forEach(el => { el.addEventListener('input', recalc); el.addEventListener('change', recalc); });
     if (els.refreshBtn) els.refreshBtn.addEventListener('click', loadPrices);
     if (els.debugBtn) els.debugBtn.addEventListener('click', debugApi);
