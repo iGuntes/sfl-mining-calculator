@@ -69,7 +69,7 @@
     .formula-tooltip { position: fixed; z-index: 1000; max-width: min(380px, calc(100vw - 24px)); padding: 12px 14px; background: var(--panel-2); border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; box-shadow: var(--shadow); font-size: 12px; line-height: 1.55; color: var(--text); pointer-events: none; }
     .formula-tooltip[hidden] { display: none !important; }
     .formula-tooltip .tooltip-heading { font-weight: 700; margin-bottom: 6px; color: #e2e8f0; }
-    .head-clamp, .cell-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; line-height: 1.35; max-height: calc(1.35em * 3); white-space: normal; word-break: normal; overflow-wrap: anywhere; }
+    .head-clamp, .cell-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; line-height: 1.35; max-height: calc(1.35em * 3); white-space: normal; word-break: normal; overflow-wrap: anywhere; }
     .cell-center { text-align: left; }
     pre.debug { white-space:pre-wrap; word-break:break-word; background:#020617; padding:12px; border-radius:12px; border:1px solid #334155; color:#cbd5e1; font-size:12px; }
     @media (max-width: 1260px) { .hero, .grid { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } table { width: 100%; table-layout: fixed; } }
@@ -221,6 +221,7 @@
                   <th class="col-mobile-hide"><span class="th-title">Инструмент</span><span class="th-hint">(наведите на значение)</span></th>
                   <th class="col-optimal col-mobile-hide"><span class="th-title">Откуда</span><span class="th-hint">(план цепочки)</span></th>
                   <th><span class="th-title">Лучший способ получить</span></th>
+                  <th class="col-mobile-hide"><span class="th-title">Скрытый убыток</span><span class="th-hint">(упущ. выгода на 1 ед.)</span></th>
                   <th class="col-mobile-hide"><span class="th-title">Профит на 1 ед.</span></th>
                   <th class="col-mobile-hide"><span class="th-title">Профит на 1 инструмент</span></th>
                   <th class="col-mobile-hide"><span class="th-title">ROI</span></th>
@@ -832,7 +833,37 @@ function buildChainFormula(resource) {
         const saleAdvice = getSaleAdviceDisplay(roleInChain);
         const saleAdviceTooltipHtml = buildSaleAdviceTooltip(roleInChain);
 
-        rows.push(`
+        // --- РАСЧЕТ УПУЩЕННОЙ ВЫГОДЫ ---
+        // Считаем чистый скрытый убыток: реальная рыночная себестоимость минус цена прямой покупки на рынке
+        const opportunityLoss = marketUnitCost - marketPrice;
+        let oppLossDisplay = '—';
+        
+        if (Number.isFinite(opportunityLoss)) {
+          if (opportunityLoss > 0.0000000001) {
+            // Вы крафтите в минус по сравнению с рынком
+            oppLossDisplay = `
+              <span class="bad tooltip-trigger" tabindex="0">
+                -${fmt(opportunityLoss, 6)}
+                <template class="tooltip-source">
+                  <div class="tooltip-heading">Упущенная выгода!</div>
+                  Крафтить этот ресурс вручную убыточно для вашего кошелька. Вы сжигаете ингредиенты, которые на рынке суммарно стоят дороже, чем прямая покупка этого готового ресурса.<br><br>С каждой добытой единицы вы скрыто теряете <b>${fmt(opportunityLoss, 6)} FLOWER</b>.
+                </template>
+              </span>`;
+          } else {
+            // Выгода есть или крафт эффективнее рынка
+            oppLossDisplay = `
+              <span class="good tooltip-trigger" tabindex="0">
+                Нет
+                <template class="tooltip-source">
+                  <div class="tooltip-heading">Всё отлично</div>
+                  Добыча этого ресурса выгоднее, чем его прямая покупка на рынке. Скрытых убытков и упущенной выгоды нет!
+                </template>
+              </span>`;
+          }
+        }
+        // --------------------------------
+
+rows.push(`
           <tr>
             <td><div class="cell-clamp"><strong>${resource}</strong></div></td>
             <td class="col-mobile-hide"><div class="cell-clamp">${fmt(marketPrice, 6)}</div></td>
@@ -853,6 +884,9 @@ function buildChainFormula(resource) {
               ${useOptimal ? `<span class="tooltip-trigger" tabindex="0" aria-label="План цепочки ${resource}"><span>${optimalSource?.label || '—'}</span><template class="tooltip-source">${optimalPlanTooltipHtml}</template></span>` : '—'}
             </td>
             <td class="${bestAcquisitionMethod === 'Купить ресурс' ? 'bad' : bestAcquisitionMethod === 'Производить по рынку' ? 'good' : bestAcquisitionMethod === 'Производить вручную' ? 'warn' : ''}"><div class="cell-clamp">${bestAcquisitionMethod}</div></td>
+            
+            <td class="col-mobile-hide">${oppLossDisplay}</td>
+            
             <td class="col-mobile-hide ${profitPerUnit >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerUnit, 6)}</div></td>
             <td class="col-mobile-hide ${profitPerTool >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerTool, 6)}</div></td>
             <td class="col-mobile-hide ${roi >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${pct(roi)}</div></td>
