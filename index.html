@@ -386,7 +386,7 @@
     function pickCheaperSource(buyPrice, mineUnitCost) {
       const options = [];
       if (Number.isFinite(buyPrice)) options.push({ key: 'buy', label: 'Купить', value: buyPrice });
-      if (Number.isFinite(mineUnitCost)) options.push({ key: 'mine', label: 'Добывать', value: mineUnitCost });
+      if (Number.isFinite(mineUnitCost)) options.push({ key: 'mine', label: 'Добыть', value: mineUnitCost });
       if (!options.length) return { key: 'none', label: '—', value: NaN };
       return options.reduce((best, option) => (option.value < best.value ? option : best));
     }
@@ -403,16 +403,25 @@
   chainCoinPart.Crimstone = 3 * woodUnitCoin + 3 * goldUnitCoin + getToolCoinCost('Crimstone');
   return chainCoinPart;
 }
-    function applySkillState(landData) {
-      const skills = landData?.bumpkin?.skills || {};
-      const hasFeller = Number(skills["Feller's Discount"]) > 0;
-      const hasFrugal = Number(skills["Frugal Miner"]) > 0;
+function applySkillState(data) {
+      // Ищем данные бампкина (в API они могут быть в корне, внутри state или data)
+      const bumpkin = data?.bumpkin || data?.state?.bumpkin || data?.farm?.bumpkin || {};
+      const skills = bumpkin?.skills || {};
 
+      // Проверяем наличие скиллов (значение больше 0 означает, что скилл вкачан)
+      const hasFeller = !!skills["Feller's Discount"];
+      const hasFrugal = !!skills["Frugal Miner"];
+
+      // Переключаем ползунки в интерфейсе
       if (els.fellerDiscount) els.fellerDiscount.checked = hasFeller;
       if (els.frugalMiner) els.frugalMiner.checked = hasFrugal;
 
+      // Выводим в консоль для проверки (нажми F12, чтобы убедиться, что всё подтянулось)
+      console.log("🛠 Загруженные скиллы:", skills);
+      console.log("🪓 Feller's Discount:", hasFeller, "| ⛏ Frugal Miner:", hasFrugal);
+
       return { hasFeller, hasFrugal };
-}
+    }
     function applyFarmPayload(v11, land) {
       const data = land && typeof land === 'object' ? land : {};
       const resources = data.resources || {};
@@ -431,45 +440,72 @@
       return map;
     }
 
-    function getOptimalCosts() {
-      const directCoinPart = { Wood: 16, Stone: 16, Iron: 16, Gold: 64, Crimstone: 80 };
-      const chainCoinPart = getChainCoinCosts();
-      const chainCoinFlowerPart = {
-        Wood: coinToFlower(chainCoinPart.Wood),
-        Stone: coinToFlower(chainCoinPart.Stone),
-        Iron: coinToFlower(chainCoinPart.Iron),
-        Gold: coinToFlower(chainCoinPart.Gold),
-        Crimstone: coinToFlower(chainCoinPart.Crimstone)
-      };
-      const mineUnitCosts = {};
-      const toolCosts = {};
-      const sources = {};
-      const woodPick = pickCheaperSource(getPrice('Wood'), coinToFlower(directCoinPart.Wood) / getYield('Wood'));
-      mineUnitCosts.Wood = woodPick.value;
-      sources.Wood = woodPick;
-      toolCosts.Wood = coinToFlower(directCoinPart.Wood);
-      const stoneTool = 3 * mineUnitCosts.Wood + coinToFlower(directCoinPart.Stone);
-      const stonePick = pickCheaperSource(getPrice('Stone'), stoneTool / getYield('Stone'));
-      mineUnitCosts.Stone = stonePick.value;
-      sources.Stone = stonePick;
-      toolCosts.Stone = stoneTool;
-      const ironTool = 3 * mineUnitCosts.Wood + 5 * mineUnitCosts.Stone + coinToFlower(directCoinPart.Iron);
-      const ironPick = pickCheaperSource(getPrice('Iron'), ironTool / getYield('Iron'));
-      mineUnitCosts.Iron = ironPick.value;
-      sources.Iron = ironPick;
-      toolCosts.Iron = ironTool;
-      const goldTool = 3 * mineUnitCosts.Wood + 5 * mineUnitCosts.Iron + coinToFlower(directCoinPart.Gold);
-      const goldPick = pickCheaperSource(getPrice('Gold'), goldTool / getYield('Gold'));
-      mineUnitCosts.Gold = goldPick.value;
-      sources.Gold = goldPick;
-      toolCosts.Gold = goldTool;
-      const crimTool = 3 * mineUnitCosts.Wood + 3 * mineUnitCosts.Gold + coinToFlower(directCoinPart.Crimstone);
-      const crimPick = pickCheaperSource(getPrice('Crimstone'), crimTool / getYield('Crimstone'));
-      mineUnitCosts.Crimstone = crimPick.value;
-      sources.Crimstone = crimPick;
-      toolCosts.Crimstone = crimTool;
-      return { toolCosts, mineUnitCosts, sources, directCoinPart, chainCoinPart, chainCoinFlowerPart };
+function getOptimalCosts() {
+  const directCoinPart = {
+    Wood: getToolCoinCost('Wood'),
+    Stone: getToolCoinCost('Stone'),
+    Iron: getToolCoinCost('Iron'),
+    Gold: getToolCoinCost('Gold'),
+    Crimstone: getToolCoinCost('Crimstone')
+  };
+
+  const chainCoinPart = getChainCoinCosts();
+  const chainCoinFlowerPart = {
+    Wood: coinToFlower(chainCoinPart.Wood),
+    Stone: coinToFlower(chainCoinPart.Stone),
+    Iron: coinToFlower(chainCoinPart.Iron),
+    Gold: coinToFlower(chainCoinPart.Gold),
+    Crimstone: coinToFlower(chainCoinPart.Crimstone)
+  };
+
+  const mineUnitCosts = {};
+  const toolCosts = {};
+  const sources = {};
+
+  // === НОВАЯ ЛОГИКА ОЦЕНКИ ИНГРЕДИЕНТА ===
+  const getIngredientCost = (res) => {
+    // Если на предыдущем этапе мы решили, что ресурс дешевле купить (источник 'buy')
+    // то для крафта мы идем на рынок и покупаем его по полной цене (без учета комиссии)
+    if (sources[res] && sources[res].key === 'buy') {
+      return getPrice(res);
     }
+    // Если мы решили его добывать, то стоимость его использования в крафте =
+    // деньги, которые мы потеряли, отказавшись от его продажи (цена покупки минус комиссия)
+    return getEffectiveSellPrice(res);
+  };
+
+  // 1. WOOD
+  toolCosts.Wood = coinToFlower(directCoinPart.Wood);
+  const woodPick = pickCheaperSource(getPrice('Wood'), toolCosts.Wood / getYield('Wood'));
+  mineUnitCosts.Wood = woodPick.value;
+  sources.Wood = woodPick;
+
+  // 2. STONE 
+  toolCosts.Stone = 3 * getIngredientCost('Wood') + coinToFlower(directCoinPart.Stone);
+  const stonePick = pickCheaperSource(getPrice('Stone'), toolCosts.Stone / getYield('Stone'));
+  mineUnitCosts.Stone = stonePick.value;
+  sources.Stone = stonePick;
+
+  // 3. IRON 
+  toolCosts.Iron = 3 * getIngredientCost('Wood') + 5 * getIngredientCost('Stone') + coinToFlower(directCoinPart.Iron);
+  const ironPick = pickCheaperSource(getPrice('Iron'), toolCosts.Iron / getYield('Iron'));
+  mineUnitCosts.Iron = ironPick.value;
+  sources.Iron = ironPick;
+
+  // 4. GOLD 
+  toolCosts.Gold = 3 * getIngredientCost('Wood') + 5 * getIngredientCost('Iron') + coinToFlower(directCoinPart.Gold);
+  const goldPick = pickCheaperSource(getPrice('Gold'), toolCosts.Gold / getYield('Gold'));
+  mineUnitCosts.Gold = goldPick.value;
+  sources.Gold = goldPick;
+
+  // 5. CRIMSTONE 
+  toolCosts.Crimstone = 3 * getIngredientCost('Wood') + 3 * getIngredientCost('Gold') + coinToFlower(directCoinPart.Crimstone);
+  const crimPick = pickCheaperSource(getPrice('Crimstone'), toolCosts.Crimstone / getYield('Crimstone'));
+  mineUnitCosts.Crimstone = crimPick.value;
+  sources.Crimstone = crimPick;
+
+  return { toolCosts, mineUnitCosts, sources, directCoinPart, chainCoinPart, chainCoinFlowerPart };
+}
     function getUnitCostClass(unitCost, marketPrice) {
       if (!Number.isFinite(unitCost) || !Number.isFinite(marketPrice)) return '';
       if (unitCost < marketPrice - 1e-9) return 'good';
@@ -537,60 +573,6 @@ function getChainCoinCosts() {
 function coinToFlower(coins) {
   const rate = Math.max(0.0001, num(els.coinRate.value));
   return coins / rate;
-}
-
-function getOptimalCosts() {
-  const directCoinPart = {
-    Wood: getToolCoinCost('Wood'),
-    Stone: getToolCoinCost('Stone'),
-    Iron: getToolCoinCost('Iron'),
-    Gold: getToolCoinCost('Gold'),
-    Crimstone: getToolCoinCost('Crimstone')
-  };
-
-  const chainCoinPart = getChainCoinCosts();
-  const chainCoinFlowerPart = {
-    Wood: coinToFlower(chainCoinPart.Wood),
-    Stone: coinToFlower(chainCoinPart.Stone),
-    Iron: coinToFlower(chainCoinPart.Iron),
-    Gold: coinToFlower(chainCoinPart.Gold),
-    Crimstone: coinToFlower(chainCoinPart.Crimstone)
-  };
-
-  const mineUnitCosts = {};
-  const toolCosts = {};
-  const sources = {};
-
-  const woodPick = pickCheaperSource(getPrice('Wood'), coinToFlower(directCoinPart.Wood) / getYield('Wood'));
-  mineUnitCosts.Wood = woodPick.value;
-  sources.Wood = woodPick;
-  toolCosts.Wood = coinToFlower(directCoinPart.Wood);
-
-  const stoneTool = 3 * mineUnitCosts.Wood + coinToFlower(directCoinPart.Stone);
-  const stonePick = pickCheaperSource(getPrice('Stone'), stoneTool / getYield('Stone'));
-  mineUnitCosts.Stone = stonePick.value;
-  sources.Stone = stonePick;
-  toolCosts.Stone = stoneTool;
-
-  const ironTool = 3 * mineUnitCosts.Wood + 5 * mineUnitCosts.Stone + coinToFlower(directCoinPart.Iron);
-  const ironPick = pickCheaperSource(getPrice('Iron'), ironTool / getYield('Iron'));
-  mineUnitCosts.Iron = ironPick.value;
-  sources.Iron = ironPick;
-  toolCosts.Iron = ironTool;
-
-  const goldTool = 3 * mineUnitCosts.Wood + 5 * mineUnitCosts.Iron + coinToFlower(directCoinPart.Gold);
-  const goldPick = pickCheaperSource(getPrice('Gold'), goldTool / getYield('Gold'));
-  mineUnitCosts.Gold = goldPick.value;
-  sources.Gold = goldPick;
-  toolCosts.Gold = goldTool;
-
-  const crimTool = 3 * mineUnitCosts.Wood + 3 * mineUnitCosts.Gold + coinToFlower(directCoinPart.Crimstone);
-  const crimPick = pickCheaperSource(getPrice('Crimstone'), crimTool / getYield('Crimstone'));
-  mineUnitCosts.Crimstone = crimPick.value;
-  sources.Crimstone = crimPick;
-  toolCosts.Crimstone = crimTool;
-
-  return { toolCosts, mineUnitCosts, sources, directCoinPart, chainCoinPart, chainCoinFlowerPart };
 }
 
 function getToolCosts(mode) {
@@ -665,17 +647,24 @@ function describeToolExpression(resource, mode, costs) {
 
   if (mode === 'optimal') {
     const src = (r) => sources[r]?.label || '—';
-    const unit = (r) => fmt(mineUnitCosts[r], 4);
+    
+    // Динамический тултип для стоимости ингредиента
+    const ingrCost = (r) => {
+      if (sources[r] && sources[r].key === 'buy') {
+         return `${fmt(getPrice(r), 4)} (покупка)`; // Если покупаем с рынка
+      }
+      return `${fmt(getEffectiveSellPrice(r), 4)} (упущ. выгода)`; // Если фармим сами
+    };
 
     if (resource === 'Wood') {
       return `${coinFlowerExprCoins(getToolCoinCost('Wood'))} / ${fmt(getYield('Wood'), 2)} <span class="muted">(${src('Wood')})</span>`;
     }
 
     const map = {
-      Stone: `3×${unit('Wood')} Wood + ${coinFlowerExprCoins(getToolCoinCost('Stone'))} <span class="muted">(Wood: ${src('Wood')}, Stone: ${src('Stone')})</span>`,
-      Iron: `3×${unit('Wood')} + 5×${unit('Stone')} + ${coinFlowerExprCoins(getToolCoinCost('Iron'))} <span class="muted">(Iron: ${src('Iron')})</span>`,
-      Gold: `3×${unit('Wood')} + 5×${unit('Iron')} + ${coinFlowerExprCoins(getToolCoinCost('Gold'))} <span class="muted">(Gold: ${src('Gold')})</span>`,
-      Crimstone: `3×${unit('Wood')} + 3×${unit('Gold')} + ${coinFlowerExprCoins(getToolCoinCost('Crimstone'))} <span class="muted">(Crimstone: ${src('Crimstone')})</span>`
+      Stone: `3×${ingrCost('Wood')} + ${coinFlowerExprCoins(getToolCoinCost('Stone'))}`,
+      Iron: `3×${ingrCost('Wood')} + 5×${ingrCost('Stone')} + ${coinFlowerExprCoins(getToolCoinCost('Iron'))}`,
+      Gold: `3×${ingrCost('Wood')} + 5×${ingrCost('Iron')} + ${coinFlowerExprCoins(getToolCoinCost('Gold'))}`,
+      Crimstone: `3×${ingrCost('Wood')} + 3×${ingrCost('Gold')} + ${coinFlowerExprCoins(getToolCoinCost('Crimstone'))}`
     };
     return map[resource];
   }
@@ -738,13 +727,35 @@ function buildChainFormula(resource) {
       }
       return html;
     }
-    function buildOptimalPlanTooltip(costs) {
-      const lines = RESOURCE_ORDER.map((r) => {
-        const src = costs.sources[r];
-        return `<strong>${r}:</strong> ${src?.label || '—'} (${fmt(src?.value, 6)} FLOWER / ед.)`;
-      });
-      return `<div class="tooltip-heading">План оптимальной цепочки</div>${lines.join('<br>')}<br><span class="muted">Ингредиенты для крафта берутся по лучшей цене звеньев выше.</span>`;
-    }
+function buildOptimalPlanTooltip(costs, currentResource) {
+  if (!costs.sources) return '';
+
+  // Карта зависимостей: какие ресурсы нужны для цепочки текущего инструмента
+  const chainMap = {
+    Wood: ['Wood'],
+    Stone: ['Wood', 'Stone'],
+    Iron: ['Wood', 'Stone', 'Iron'],
+    Gold: ['Wood', 'Iron', 'Gold'],
+    Crimstone: ['Wood', 'Gold', 'Crimstone']
+  };
+
+  const requiredResources = chainMap[currentResource] || [currentResource];
+
+  const lines = requiredResources.map((r) => {
+    const src = costs.sources[r];
+    const isTarget = r === currentResource;
+    
+    // Красим "Добывать" в зеленый, "Купить" в желтый (или оранжевый)
+    const colorClass = src?.key === 'buy' ? 'warn' : 'good';
+    
+    // Выделяем целевой ресурс стрелочкой, а предыдущие ингредиенты делаем приглушенными
+    const prefix = isTarget ? `▶ <strong>${r}</strong>` : `<span class="muted">${r}</span>`;
+    
+    return `${prefix}: <span class="${colorClass}">${src?.label || '—'}</span>`;
+  });
+
+  return `<div class="tooltip-heading">План для ${currentResource}</div>${lines.join('<br>')}`;
+}
     function recalc() {
       const useOptimal = !!els.optimalChain?.checked;
       const mode = els.costMode.value;
@@ -757,28 +768,32 @@ function buildChainFormula(resource) {
       const activeCostsData = getToolCosts(basisMode);
       const { toolCosts, mineUnitCosts } = activeCostsData;
       const optimalSources = activeCostsData.sources || null;
-      const optimalPlanTooltipHtml = useOptimal ? buildOptimalPlanTooltip(activeCostsData) : '';
       const rows = [];
       let profitableCount = 0;
       let buyCount = 0;
       let best = { resource: null, profit: -Infinity };
 
-      for (const resource of RESOURCE_ORDER) {
-        const marketPrice = getPrice(resource);
-        const effectiveSellPrice = getEffectiveSellPrice(resource);
-        const yieldValue = getYield(resource);
+for (const resource of RESOURCE_ORDER) {
+    const marketPrice = getPrice(resource);
+    const effectiveSellPrice = getEffectiveSellPrice(resource);
+    const yieldValue = getYield(resource);
 
-        const marketUnitCost = marketCostsData.toolCosts[resource] / yieldValue;
-        const unitTooltipHtml = buildFormula(resource, basisMode, 'unit');
-        const toolTooltipHtml = buildFormula(resource, basisMode, 'tool');
-        const selfUnitCost = selfCostsData.mineUnitCosts[resource];
-        const unitCost = basisMode === 'market' ? marketUnitCost : mineUnitCosts[resource];
-        const optimalSource = optimalSources?.[resource];
+    const marketUnitCost = marketCostsData.toolCosts[resource] / yieldValue;
+    const unitTooltipHtml = buildFormula(resource, basisMode, 'unit');
+    const toolTooltipHtml = buildFormula(resource, basisMode, 'tool');
+    const selfUnitCost = selfCostsData.mineUnitCosts[resource];
+    const unitCost = basisMode === 'market' ? marketUnitCost : mineUnitCosts[resource];
+    const optimalSource = optimalSources?.[resource];
+    
+    // ==== ВСТАВИТЬ СЮДА ====
+    // Генерируем индивидуальный тултип для текущего ресурса в цикле
+    const optimalPlanTooltipHtml = useOptimal ? buildOptimalPlanTooltip(activeCostsData, resource) : '';
+    // =======================
 
-        const acquisitionOptions = [
-          { label: 'Купить ресурс', value: marketPrice },
-          { label: 'Производить по рынку', value: marketUnitCost },
-          { label: 'Производить вручную', value: selfUnitCost }
+    const acquisitionOptions = [
+          { label: 'Купить', value: marketPrice },
+          { label: 'Добыть по рынку', value: marketUnitCost },
+          { label: 'Добыть вручную', value: selfUnitCost }
         ].filter(option => Number.isFinite(option.value));
         const bestAcquisitionCost = acquisitionOptions.length ? Math.min(...acquisitionOptions.map(option => option.value)) : NaN;
         const bestAcquisitionWinners = acquisitionOptions.filter(option => Math.abs(option.value - bestAcquisitionCost) < 1e-12);
@@ -883,7 +898,7 @@ rows.push(`
             <td class="col-mobile-hide col-optimal ${optimalSource?.key === 'mine' ? 'good' : ''}">
               ${useOptimal ? `<span class="tooltip-trigger" tabindex="0" aria-label="План цепочки ${resource}"><span>${optimalSource?.label || '—'}</span><template class="tooltip-source">${optimalPlanTooltipHtml}</template></span>` : '—'}
             </td>
-            <td class="${bestAcquisitionMethod === 'Купить ресурс' ? 'bad' : bestAcquisitionMethod === 'Производить по рынку' ? 'good' : bestAcquisitionMethod === 'Производить вручную' ? 'warn' : ''}"><div class="cell-clamp">${bestAcquisitionMethod}</div></td>
+            <td class="${bestAcquisitionMethod === 'Купить' ? 'bad' : bestAcquisitionMethod === 'Добыть по рынку' ? 'warn' : bestAcquisitionMethod === 'Добыть вручную' ? 'good' : ''}"><div class="cell-clamp">${bestAcquisitionMethod}</div></td>
             
             <td class="col-mobile-hide">${oppLossDisplay}</td>
             
