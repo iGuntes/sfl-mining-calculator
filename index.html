@@ -217,7 +217,7 @@
                   <th><span class="th-title">Ресурс</span></th>
                   <th class="col-mobile-hide"><span class="th-title">Покупка</span></th>
                   <th class="col-mobile-hide"><span class="th-title">Продажа</span></th>
-                  <th class="col-mobile-hide"><span class="th-title">Себестоимость</span><span class="th-hint">(<span id="unitCostModeHint">рыночная база</span>, наведите на значение)</span></th>
+                  <th class="col-mobile-hide"><span class="th-title">Ценность сырья</span><span class="th-hint">(<span id="unitCostModeHint">рыночная база</span>, наведите на значение)</span></th>
                   <th class="col-mobile-hide"><span class="th-title">Инструмент</span><span class="th-hint">(наведите на значение)</span></th>
                   <th class="col-optimal col-mobile-hide"><span class="th-title">Откуда</span><span class="th-hint">(план цепочки)</span></th>
                   <th><span class="th-title">Лучший способ получить</span></th>
@@ -803,80 +803,65 @@ for (const resource of RESOURCE_ORDER) {
         const profitPerTool = profitPerUnit * yieldValue;
         const roi = unitCost > 0 ? (profitPerUnit / unitCost) * 100 : NaN;
 
-        let adviceForSale = '—';
-        let adviceClass = 'warn';
-        let roleInChain = '—';
-
-        if (Number.isFinite(effectiveSellPrice) && Number.isFinite(unitCost)) {
-          if (profitPerUnit > 0.0000000001) {
-            adviceForSale = 'Добывать для продажи';
-            adviceClass = 'good';
-            profitableCount += 1;
-            roleInChain = 'Добывать и продавать';
-          } else if (profitPerUnit < -0.0000000001) {
-            adviceForSale = 'Дешевле покупать';
-            adviceClass = 'bad';
-            buyCount += 1;
-            roleInChain = 'Покупать как сырьё';
-          } else {
-            adviceForSale = 'Нет смысла добывать под продажу';
-            adviceClass = 'warn';
-            roleInChain = 'Практически без разницы';
-          }
-
-          if (profitPerUnit > best.profit) best = { resource, profit: profitPerUnit };
+if (Number.isFinite(profitPerUnit) && profitPerUnit > best.profit) {
+          best = { resource, profit: profitPerUnit };
         }
 
-        const selfIsCheaperToOwn = Number.isFinite(selfUnitCost) && Number.isFinite(marketPrice) && selfUnitCost < marketPrice;
-
-        if (roleInChain === 'Добывать и продавать' || roleInChain === 'Покупать как сырьё') {
-          if (selfIsCheaperToOwn) {
-            if (roleInChain === 'Добывать и продавать') {
-              roleInChain = 'Добывать и продавать; для себя выгоднее добывать';
-            } else {
-              roleInChain = 'Покупать как сырьё; для себя выгоднее добывать';
-            }
-          } else {
-            if (roleInChain === 'Добывать и продавать') {
-              roleInChain = 'Добывать и продавать; для себя выгоднее покупать';
-            } else {
-              roleInChain = 'Покупать как сырьё; для себя выгоднее покупать';
-            }
-          }
-        }
-
-        const saleAdvice = getSaleAdviceDisplay(roleInChain);
-        const saleAdviceTooltipHtml = buildSaleAdviceTooltip(roleInChain);
-
-        // --- РАСЧЕТ УПУЩЕННОЙ ВЫГОДЫ ---
-        // Считаем чистый скрытый убыток: реальная рыночная себестоимость минус цена прямой покупки на рынке
-        const opportunityLoss = marketUnitCost - marketPrice;
+        // --- УМНЫЙ АНАЛИЗ И СОВЕТЫ (3 СЦЕНАРИЯ) ---
         let oppLossDisplay = '—';
-        
-        if (Number.isFinite(opportunityLoss)) {
-          if (opportunityLoss > 0.0000000001) {
-            // Вы крафтите в минус по сравнению с рынком
+        let customAdviceShort = '—';
+        let customAdviceClass = '—';
+        let customAdviceTooltip = '';
+
+        if (Number.isFinite(unitCost)) {
+          const opportunityLoss = unitCost - effectiveSellPrice;
+          
+          if (unitCost < effectiveSellPrice) {
+            // СЦЕНАРИЙ 1: ЗЕЛЕНАЯ ЗОНА
+            customAdviceShort = `Делать и продавать`;
+            customAdviceClass = `good`;
+            customAdviceTooltip = `<div class="tooltip-heading">Всё отлично ✅</div>Производить этот ресурс выгодно как для крафта, так и для продажи на рынке. Вы получаете чистую прибыль.`;
+            
+            oppLossDisplay = `
+              <span class="good tooltip-trigger" tabindex="0">
+                Нет
+                <template class="tooltip-source">
+                  <div class="tooltip-heading">Нет потерь</div>
+                  Добыча этого ресурса выгоднее покупки. Упущенной выгоды нет!
+                </template>
+              </span>`;
+              
+          } else if (unitCost >= effectiveSellPrice && unitCost < marketPrice) {
+            // СЦЕНАРИЙ 2: СЕРАЯ ЗОНА
+            customAdviceShort = `Для себя: Крафт<br><span class="bad" style="font-size:11px;">Рынок: Сбыт сырья</span>`;
+            customAdviceClass = `warn`; 
+            customAdviceTooltip = `<div class="tooltip-heading">Внимание ⚠️</div>Крафт на продажу убыточен (рынок оценивает сырье дороже готового ресурса).<br><br><b>Оставьте для себя</b> (это дешевле покупки), но не продавайте.`;
+            
             oppLossDisplay = `
               <span class="bad tooltip-trigger" tabindex="0">
                 -${fmt(opportunityLoss, 6)}
                 <template class="tooltip-source">
                   <div class="tooltip-heading">Упущенная выгода!</div>
-                  Крафтить этот ресурс вручную убыточно для вашего кошелька. Вы сжигаете ингредиенты, которые на рынке суммарно стоят дороже, чем прямая покупка этого готового ресурса.<br><br>С каждой добытой единицы вы скрыто теряете <b>${fmt(opportunityLoss, 6)} FLOWER</b>.
+                  С каждой проданной единицы вы теряете <b>${fmt(opportunityLoss, 6)} FLOWER</b> по сравнению с продажей сырья. Не продавайте этот ресурс!
                 </template>
               </span>`;
-          } else {
-            // Выгода есть или крафт эффективнее рынка
+              
+          } else if (unitCost >= marketPrice) {
+            // СЦЕНАРИЙ 3: КРАСНАЯ ЗОНА
+            customAdviceShort = `Для себя: Купить<br><span class="bad" style="font-size:11px;">Рынок: Сбыт сырья</span>`;
+            customAdviceClass = `bad`;
+            customAdviceTooltip = `<div class="tooltip-heading">Полный убыток 🛑</div>Ресурс на рынке стоит дешевле, чем сырье для него.<br><br>Нужен ресурс — купите. Нужны деньги — продайте сырье.`;
+            
             oppLossDisplay = `
-              <span class="good tooltip-trigger" tabindex="0">
-                Нет
+              <span class="bad tooltip-trigger" tabindex="0">
+                -${fmt(opportunityLoss, 6)}
                 <template class="tooltip-source">
-                  <div class="tooltip-heading">Всё отлично</div>
-                  Добыча этого ресурса выгоднее, чем его прямая покупка на рынке. Скрытых убытков и упущенной выгоды нет!
+                  <div class="tooltip-heading">Упущенная выгода!</div>
+                  Крафтить убыточно даже для себя. Покупка готового ресурса обойдется дешевле.
                 </template>
               </span>`;
           }
         }
-        // --------------------------------
 
 rows.push(`
           <tr>
@@ -905,10 +890,10 @@ rows.push(`
             <td class="col-mobile-hide ${profitPerUnit >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerUnit, 6)}</div></td>
             <td class="col-mobile-hide ${profitPerTool >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerTool, 6)}</div></td>
             <td class="col-mobile-hide ${roi >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${pct(roi)}</div></td>
-            <td class="${adviceClass}">
-              <span class="tooltip-trigger" tabindex="0" aria-label="Совет ${resource}">
-                <span>${saleAdvice.short}</span>
-                <template class="tooltip-source">${saleAdviceTooltipHtml}</template>
+            <td class="${customAdviceClass}">
+              <span class="tooltip-trigger" tabindex="0" aria-label="Стратегия ${resource}">
+                <span>${customAdviceShort}</span>
+                <template class="tooltip-source">${customAdviceTooltip}</template>
               </span>
             </td>
           </tr>
@@ -1051,6 +1036,9 @@ rows.push(`
         tip.style.top = `${top}px`;
       }
       function show(trigger) {
+        // Защита от мерцания: если мы уже смотрим на эту подсказку, не рисуем её заново
+        if (active === trigger && !tip.hidden) return;
+
         const tpl = trigger.querySelector('template.tooltip-source');
         if (!tpl) return;
         tip.innerHTML = tpl.innerHTML;
