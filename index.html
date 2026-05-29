@@ -310,9 +310,16 @@
       return Number.isFinite(n) ? n : 0;
     }
     function fmt(value, digits = 6) {
-      if (!Number.isFinite(value)) return "—";
-      return value.toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: digits });
-    }
+  if (!Number.isFinite(value)) return "—";
+  
+  // Проверяем: если число целое, выводим без дробной части
+  if (Number.isInteger(value)) {
+    return value.toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+  
+  // Если число дробное, выводим с фиксированными 6 знаками
+  return value.toLocaleString("ru-RU", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
     function pct(value) {
       if (!Number.isFinite(value)) return "—";
       return `${fmt(value, 2)}%`;
@@ -512,16 +519,6 @@ function getOptimalCosts() {
       if (unitCost > marketPrice + 1e-9) return 'bad';
       return 'warn';
     }
-    const SALE_TOOLTIPS = {
-      '—': { short: '—', summary: 'Недостаточно данных.', sale: null, self: null },
-      'Добывать и продавать': { short: 'Продажа', summary: 'Добывай и продавай — на 1 ед. есть профит после комиссии.', sale: 'Фарм под продажу выгоден.', self: null },
-      'Покупать как сырьё': { short: 'Сырьё', summary: 'Не добывай на продажу — в минусе. Нужен ресурс — покупай на рынке.', sale: 'Добыть → продать дороже, чем купить, не получится.', self: 'Для крафта тоже разумнее покупать (добыча не дешевле рынка).' },
-      'Практически без разницы': { short: 'Нейтрально', summary: 'Под продажу смысла нет — профит около нуля.', sale: 'Специально фармить не стоит.', self: null },
-      'Добывать и продавать; для себя выгоднее добывать': { short: 'Продажа · добывать', summary: 'Добывай на продажу и для себя — оба варианта дешевле покупки.', sale: 'Фарм под продажу выгоден.', self: 'Для крафта своей цепочки тоже выгоднее добывать, чем покупать.' },
-      'Добывать и продавать; для себя выгоднее покупать': { short: 'Продажа · покупать', summary: 'На продажу — добывай; для своего крафта — покупай на рынке.', sale: 'Фарм под продажу выгоден.', self: 'Для себя дешевле купить, чем добывать.' },
-      'Покупать как сырьё; для себя выгоднее добывать': { short: 'Сырьё · добывать', summary: 'На продажу не добывай (убыток). Для себя — добывай: дешевле, чем купить.', sale: 'Продавать добытое невыгодно — цена продажи ниже себестоимости.', self: 'Но для своих нужд (крафт) добыча всё же дешевле покупки на рынке.' },
-      'Покупать как сырьё; для себя выгоднее покупать': { short: 'Сырьё · покупать', summary: 'Не добывай — покупай на рынке (и для продажи, и для себя).', sale: 'Фарм под продажу убыточен.', self: 'Для крафта покупка тоже выгоднее добычи.' }
-    };
     function getSaleAdviceDisplay(roleInChain) {
       return SALE_TOOLTIPS[roleInChain] || { short: roleInChain, summary: roleInChain, sale: null, self: null };
     }
@@ -554,25 +551,6 @@ function getToolCoinCost(resource) {
   const base = getToolBaseCoinCost(resource);
   if (!base) return 0;
   return isToolSkillActive(resource) ? base * 0.8 : base;
-}
-
-function getChainCoinCosts() {
-  const chainCoinPart = {};
-  const woodUnitCoin = getToolCoinCost('Wood') / getYield('Wood');
-  chainCoinPart.Wood = getToolCoinCost('Wood');
-  chainCoinPart.Stone = 3 * woodUnitCoin + getToolCoinCost('Stone');
-  const stoneUnitCoin = chainCoinPart.Stone / getYield('Stone');
-  chainCoinPart.Iron = 3 * woodUnitCoin + 5 * stoneUnitCoin + getToolCoinCost('Iron');
-  const ironUnitCoin = chainCoinPart.Iron / getYield('Iron');
-  chainCoinPart.Gold = 3 * woodUnitCoin + 5 * ironUnitCoin + getToolCoinCost('Gold');
-  const goldUnitCoin = chainCoinPart.Gold / getYield('Gold');
-  chainCoinPart.Crimstone = 3 * woodUnitCoin + 3 * goldUnitCoin + getToolCoinCost('Crimstone');
-  return chainCoinPart;
-}
-
-function coinToFlower(coins) {
-  const rate = Math.max(0.0001, num(els.coinRate.value));
-  return coins / rate;
 }
 
 function getToolCosts(mode) {
@@ -639,7 +617,7 @@ function getToolCosts(mode) {
 const TOOL_COIN = { Wood: 20, Stone: 20, Iron: 20, Gold: 80, Crimstone: 100 };
 
 function coinFlowerExprCoins(coins) {
-  return `${fmt(coins, 2)} / coinRate`;
+  return `${fmt(coins, 6)} / coinRate`;
 }
 
 function describeToolExpression(resource, mode, costs) {
@@ -651,13 +629,13 @@ function describeToolExpression(resource, mode, costs) {
     // Динамический тултип для стоимости ингредиента
     const ingrCost = (r) => {
       if (sources[r] && sources[r].key === 'buy') {
-         return `${fmt(getPrice(r), 4)} (покупка)`; // Если покупаем с рынка
+         return `${fmt(getPrice(r), 6)} (покупка)`; // Если покупаем с рынка
       }
-      return `${fmt(getEffectiveSellPrice(r), 4)} (упущ. выгода)`; // Если фармим сами
+      return `${fmt(getEffectiveSellPrice(r), 6)} (упущ. выгода)`; // Если фармим сами
     };
 
     if (resource === 'Wood') {
-      return `${coinFlowerExprCoins(getToolCoinCost('Wood'))} / ${fmt(getYield('Wood'), 2)} <span class="muted">(${src('Wood')})</span>`;
+      return `${coinFlowerExprCoins(getToolCoinCost('Wood'))} / ${fmt(getYield('Wood'), 6)} <span class="muted">(${src('Wood')})</span>`;
     }
 
     const map = {
@@ -686,7 +664,7 @@ function describeToolExpression(resource, mode, costs) {
     return map[resource];
   }
 
-  const m = (r) => `M_${r} <span class="muted">(${fmt(costs.mineUnitCosts[r], 4)})</span>`;
+  const m = (r) => `M_${r} <span class="muted">(${fmt(costs.mineUnitCosts[r], 6)})</span>`;
   const map = {
     Stone: `3×${m('Wood')} + ${coinPart('Stone')}`,
     Iron: `3×${m('Wood')} + 5×${m('Stone')} + ${coinPart('Iron')}`,
@@ -698,13 +676,13 @@ function describeToolExpression(resource, mode, costs) {
 
 function buildChainFormula(resource) {
   const c = getChainCoinCosts();
-  const y = (r) => fmt(getYield(r), 2);
+  const y = (r) => fmt(getYield(r), 6);
   const map = {
-    Wood: `${fmt(getToolCoinCost('Wood'), 2)} COIN`,
-    Stone: `3×(${fmt(getToolCoinCost('Wood'), 2)} / ${y('Wood')}) + ${fmt(getToolCoinCost('Stone'), 2)} = ${fmt(c.Stone, 2)} COIN`,
-    Iron: `3×(${fmt(getToolCoinCost('Wood'), 2)} / ${y('Wood')}) + 5×(${fmt(c.Stone, 2)} / ${y('Stone')}) + ${fmt(getToolCoinCost('Iron'), 2)} = ${fmt(c.Iron, 2)} COIN`,
-    Gold: `3×(${fmt(getToolCoinCost('Wood'), 2)} / ${y('Wood')}) + 5×(${fmt(c.Iron, 2)} / ${y('Iron')}) + ${fmt(getToolCoinCost('Gold'), 2)} = ${fmt(c.Gold, 2)} COIN`,
-    Crimstone: `3×(${fmt(getToolCoinCost('Wood'), 2)} / ${y('Wood')}) + 3×(${fmt(c.Gold, 2)} / ${y('Gold')}) + ${fmt(getToolCoinCost('Crimstone'), 2)} = ${fmt(c.Crimstone, 2)} COIN`
+    Wood: `${fmt(getToolCoinCost('Wood'), 6)} COIN`,
+    Stone: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + ${fmt(getToolCoinCost('Stone'), 6)} = ${fmt(c.Stone, 6)} COIN`,
+    Iron: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + 5×(${fmt(c.Stone, 6)} / ${y('Stone')}) + ${fmt(getToolCoinCost('Iron'), 6)} = ${fmt(c.Iron, 6)} COIN`,
+    Gold: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + 5×(${fmt(c.Iron, 6)} / ${y('Iron')}) + ${fmt(getToolCoinCost('Gold'), 6)} = ${fmt(c.Gold, 6)} COIN`,
+    Crimstone: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + 3×(${fmt(c.Gold, 6)} / ${y('Gold')}) + ${fmt(getToolCoinCost('Crimstone'), 6)} = ${fmt(c.Crimstone, 6)} COIN`
   };
   return map[resource];
 }
@@ -716,7 +694,7 @@ function buildChainFormula(resource) {
       const unitCost = basisMode === 'market' ? toolCost / y : costs.mineUnitCosts[resource];
       const shown = kind === 'tool' ? toolCost : unitCost;
       const toolExpr = describeToolExpression(resource, basisMode, costs);
-      const mainExpr = kind === 'tool' ? toolExpr : `(${toolExpr}) / ${fmt(y, 2)}`;
+      const mainExpr = kind === 'tool' ? toolExpr : `(${toolExpr}) / ${fmt(y, 6)}`;
       const heading = kind === 'tool' ? '<div class="tooltip-heading">Стоимость инструмента (FLOWER)</div>' : '<div class="tooltip-heading">Себестоимость 1 ед. ресурса (FLOWER)</div>';
       let html = `${heading}<span class="muted">${modeLabel}</span><br>${mainExpr}<br><span class="muted">= ${fmt(shown, 6)} FLOWER (как в таблице)</span>`;
       if (basisMode === 'optimal' && costs.sources) {
