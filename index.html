@@ -143,6 +143,22 @@
   </span>
 </label>
 
+<label class="optimal-toggle skill-toggle" for="cheapRakes">
+  <input type="checkbox" id="cheapRakes" />
+  <span class="skill-text">
+    <strong>Cheap Rakes</strong>
+    <span class="help">-20% стоимости граблей</span>
+  </span>
+</label>
+
+<label class="optimal-toggle skill-toggle" for="saltSculpture">
+  <input type="checkbox" id="saltSculpture" />
+  <span class="skill-text">
+    <strong>Salt Sculpture Lv4</strong>
+    <span class="help">-10% стоимости граблей</span>
+  </span>
+</label>
+
             <div class="row small" id="costModeRow">
               <div>
                 <label for="costMode">Модель себестоимости</label>
@@ -192,6 +208,7 @@
             <div class="resource-row"><label for="yieldIron">Iron (каменная кирка)</label><input id="yieldIron" type="number" min="0.0001" step="0.01" value="2.15" /><span class="muted">шт./инструмент</span></div>
             <div class="resource-row"><label for="yieldGold">Gold (железная кирка)</label><input id="yieldGold" type="number" min="0.0001" step="0.01" value="1.80" /><span class="muted">шт./инструмент</span></div>
             <div class="resource-row"><label for="yieldCrimstone">Crimstone (золотая кирка)</label><input id="yieldCrimstone" type="number" min="0.0001" step="0.01" value="1.60" /><span class="muted">шт./инструмент</span></div>
+            <div class="resource-row"><label for="yieldSalt">Salt (грабли)</label><input id="yieldSalt" type="number" min="0.0001" step="0.01" value="14" /><span class="muted">шт./инструмент</span></div>
           </div>
           <div style="margin-top: 12px;">
             <button id="presetBtn" style="width: 100%;">Сбросить дроп к 1</button>
@@ -256,13 +273,14 @@
   </div>
 
   <script>
-    const RESOURCE_ORDER = ["Wood", "Stone", "Iron", "Gold", "Crimstone"];
+    const RESOURCE_ORDER = ["Wood", "Stone", "Iron", "Gold", "Crimstone", "Salt"];
     const CONFIG = {
       Wood: { label: "Wood", yieldId: "yieldWood" },
       Stone: { label: "Stone", yieldId: "yieldStone" },
       Iron: { label: "Iron", yieldId: "yieldIron" },
       Gold: { label: "Gold", yieldId: "yieldGold" },
-      Crimstone: { label: "Crimstone", yieldId: "yieldCrimstone" }
+      Crimstone: { label: "Crimstone", yieldId: "yieldCrimstone" },
+      Salt: { label: "Salt", yieldId: "yieldSalt" } // Добавил эту строку
     };
 
     const els = {
@@ -292,7 +310,9 @@
       loadFarmBtn: document.getElementById("loadFarmBtn"),
       refreshBtnTop: document.getElementById("refreshBtnTop"),
       fellerDiscount: document.getElementById("fellerDiscount"),
-      frugalMiner: document.getElementById("frugalMiner")
+      frugalMiner: document.getElementById("frugalMiner"),
+      cheapRakes: document.getElementById("cheapRakes"),     // Новое
+      saltSculpture: document.getElementById("saltSculpture") // Новое
     };
 
     const FALLBACK_P2P = {
@@ -408,6 +428,7 @@
   chainCoinPart.Gold = 3 * woodUnitCoin + 5 * ironUnitCoin + getToolCoinCost('Gold');
   const goldUnitCoin = chainCoinPart.Gold / getYield('Gold');
   chainCoinPart.Crimstone = 3 * woodUnitCoin + 3 * goldUnitCoin + getToolCoinCost('Crimstone');
+  chainCoinPart.Salt = 3 * woodUnitCoin + getToolCoinCost('Salt');
   return chainCoinPart;
 }
 function applySkillState(data) {
@@ -453,7 +474,8 @@ function getOptimalCosts() {
     Stone: getToolCoinCost('Stone'),
     Iron: getToolCoinCost('Iron'),
     Gold: getToolCoinCost('Gold'),
-    Crimstone: getToolCoinCost('Crimstone')
+    Crimstone: getToolCoinCost('Crimstone'),
+    Salt: getToolCoinCost('Salt') // Добавь эту строку
   };
 
   const chainCoinPart = getChainCoinCosts();
@@ -462,7 +484,8 @@ function getOptimalCosts() {
     Stone: coinToFlower(chainCoinPart.Stone),
     Iron: coinToFlower(chainCoinPart.Iron),
     Gold: coinToFlower(chainCoinPart.Gold),
-    Crimstone: coinToFlower(chainCoinPart.Crimstone)
+    Crimstone: coinToFlower(chainCoinPart.Crimstone),
+    Salt: coinToFlower(chainCoinPart.Salt) // Добавь эту строку
   };
 
   const mineUnitCosts = {};
@@ -511,6 +534,12 @@ function getOptimalCosts() {
   mineUnitCosts.Crimstone = crimPick.value;
   sources.Crimstone = crimPick;
 
+  // 6. SALT
+  toolCosts.Salt = 3 * getIngredientCost('Wood') + coinToFlower(directCoinPart.Salt);
+  const saltPick = pickCheaperSource(getPrice('Salt'), toolCosts.Salt / getYield('Salt'));
+  mineUnitCosts.Salt = saltPick.value;
+  sources.Salt = saltPick;
+
   return { toolCosts, mineUnitCosts, sources, directCoinPart, chainCoinPart, chainCoinFlowerPart };
 }
     function getUnitCostClass(unitCost, marketPrice) {
@@ -539,6 +568,7 @@ function getToolBaseCoinCost(resource) {
   if (resource === 'Iron') return 20;
   if (resource === 'Gold') return 80;
   if (resource === 'Crimstone') return 100;
+  if (resource === 'Salt') return 20; // Базовая цена граблей добавлено 31.05.26
   return 0;
 }
 
@@ -550,6 +580,16 @@ function isToolSkillActive(resource) {
 function getToolCoinCost(resource) {
   const base = getToolBaseCoinCost(resource);
   if (!base) return 0;
+
+  if (resource === 'Salt') {
+    // Применяем скидки: -20% (0.8) и -10% (0.9) мультипликативно
+    // Если оба активны: 20 * 0.8 * 0.9 = 14.4
+    let cost = base;
+    if (els.cheapRakes.checked) cost *= 0.8;
+    if (els.saltSculpture.checked) cost *= 0.9;
+    return cost;
+  }
+  
   return isToolSkillActive(resource) ? base * 0.8 : base;
 }
 
@@ -561,7 +601,8 @@ function getToolCosts(mode) {
     Stone: getToolCoinCost('Stone'),
     Iron: getToolCoinCost('Iron'),
     Gold: getToolCoinCost('Gold'),
-    Crimstone: getToolCoinCost('Crimstone')
+    Crimstone: getToolCoinCost('Crimstone'),
+    Salt: getToolCoinCost('Salt') // Добавь эту строку
   };
 
   const chainCoinPart = getChainCoinCosts();
@@ -570,7 +611,8 @@ function getToolCosts(mode) {
     Stone: coinToFlower(chainCoinPart.Stone),
     Iron: coinToFlower(chainCoinPart.Iron),
     Gold: coinToFlower(chainCoinPart.Gold),
-    Crimstone: coinToFlower(chainCoinPart.Crimstone)
+    Crimstone: coinToFlower(chainCoinPart.Crimstone),
+    Salt: coinToFlower(chainCoinPart.Salt) // Добавь эту строку
   };
 
   const market = {
@@ -578,7 +620,8 @@ function getToolCosts(mode) {
     Stone: getPrice('Stone'),
     Iron: getPrice('Iron'),
     Gold: getPrice('Gold'),
-    Crimstone: getPrice('Crimstone')
+    Crimstone: getPrice('Crimstone'),
+    Salt: getPrice('Salt') // Добавь эту строку
   };
 
   const toolCostMarket = {
@@ -586,7 +629,8 @@ function getToolCosts(mode) {
     Stone: 3 * market.Wood + coinToFlower(directCoinPart.Stone),
     Iron: 3 * market.Wood + 5 * market.Stone + coinToFlower(directCoinPart.Iron),
     Gold: 3 * market.Wood + 5 * market.Iron + coinToFlower(directCoinPart.Gold),
-    Crimstone: 3 * market.Wood + 3 * market.Gold + coinToFlower(directCoinPart.Crimstone)
+    Crimstone: 3 * market.Wood + 3 * market.Gold + coinToFlower(directCoinPart.Crimstone),
+    Salt: 3 * market.Wood + coinToFlower(directCoinPart.Salt) // Добавь эту строку
   };
 
   if (mode === 'market') {
@@ -610,6 +654,9 @@ function getToolCosts(mode) {
 
   toolCosts.Crimstone = 3 * mineUnitCosts.Wood + 3 * mineUnitCosts.Gold + coinToFlower(directCoinPart.Crimstone);
   mineUnitCosts.Crimstone = toolCosts.Crimstone / getYield('Crimstone');
+
+  toolCosts.Salt = 3 * mineUnitCosts.Wood + coinToFlower(directCoinPart.Salt);
+  mineUnitCosts.Salt = toolCosts.Salt / getYield('Salt');
 
   return { toolCosts, mineUnitCosts, directCoinPart, chainCoinPart, chainCoinFlowerPart };
 }
@@ -642,7 +689,8 @@ function describeToolExpression(resource, mode, costs) {
       Stone: `3×${ingrCost('Wood')} + ${coinFlowerExprCoins(getToolCoinCost('Stone'))}`,
       Iron: `3×${ingrCost('Wood')} + 5×${ingrCost('Stone')} + ${coinFlowerExprCoins(getToolCoinCost('Iron'))}`,
       Gold: `3×${ingrCost('Wood')} + 5×${ingrCost('Iron')} + ${coinFlowerExprCoins(getToolCoinCost('Gold'))}`,
-      Crimstone: `3×${ingrCost('Wood')} + 3×${ingrCost('Gold')} + ${coinFlowerExprCoins(getToolCoinCost('Crimstone'))}`
+      Crimstone: `3×${ingrCost('Wood')} + 3×${ingrCost('Gold')} + ${coinFlowerExprCoins(getToolCoinCost('Crimstone'))}`,
+      Salt: `3×${ingrCost('Wood')} + ${coinFlowerExprCoins(getToolCoinCost('Salt'))}`
     };
     return map[resource];
   }
@@ -659,7 +707,8 @@ function describeToolExpression(resource, mode, costs) {
       Stone: `3×${p('Wood')} + ${coinPart('Stone')}`,
       Iron: `3×${p('Wood')} + 5×${p('Stone')} + ${coinPart('Iron')}`,
       Gold: `3×${p('Wood')} + 5×${p('Iron')} + ${coinPart('Gold')}`,
-      Crimstone: `3×${p('Wood')} + 3×${p('Gold')} + ${coinPart('Crimstone')}`
+      Crimstone: `3×${p('Wood')} + 3×${p('Gold')} + ${coinPart('Crimstone')}`,
+      Salt: `3×${p('Wood')} + ${coinPart('Salt')}` // <-- Добавлено 31.05.26
     };
     return map[resource];
   }
@@ -669,7 +718,8 @@ function describeToolExpression(resource, mode, costs) {
     Stone: `3×${m('Wood')} + ${coinPart('Stone')}`,
     Iron: `3×${m('Wood')} + 5×${m('Stone')} + ${coinPart('Iron')}`,
     Gold: `3×${m('Wood')} + 5×${m('Iron')} + ${coinPart('Gold')}`,
-    Crimstone: `3×${m('Wood')} + 3×${m('Gold')} + ${coinPart('Crimstone')}`
+    Crimstone: `3×${m('Wood')} + 3×${m('Gold')} + ${coinPart('Crimstone')}`,
+    Salt: `3×${m('Wood')} + ${coinPart('Salt')}` // <-- Добавлено 31.05.26
   };
   return map[resource];
 }
@@ -682,7 +732,8 @@ function buildChainFormula(resource) {
     Stone: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + ${fmt(getToolCoinCost('Stone'), 6)} = ${fmt(c.Stone, 6)} COIN`,
     Iron: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + 5×(${fmt(c.Stone, 6)} / ${y('Stone')}) + ${fmt(getToolCoinCost('Iron'), 6)} = ${fmt(c.Iron, 6)} COIN`,
     Gold: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + 5×(${fmt(c.Iron, 6)} / ${y('Iron')}) + ${fmt(getToolCoinCost('Gold'), 6)} = ${fmt(c.Gold, 6)} COIN`,
-    Crimstone: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + 3×(${fmt(c.Gold, 6)} / ${y('Gold')}) + ${fmt(getToolCoinCost('Crimstone'), 6)} = ${fmt(c.Crimstone, 6)} COIN`
+    Crimstone: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + 3×(${fmt(c.Gold, 6)} / ${y('Gold')}) + ${fmt(getToolCoinCost('Crimstone'), 6)} = ${fmt(c.Crimstone, 6)} COIN`,
+    Salt: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + ${fmt(getToolCoinCost('Salt'), 6)} = ${fmt(c.Salt, 6)} COIN`
   };
   return map[resource];
 }
@@ -714,7 +765,8 @@ function buildOptimalPlanTooltip(costs, currentResource) {
     Stone: ['Wood', 'Stone'],
     Iron: ['Wood', 'Stone', 'Iron'],
     Gold: ['Wood', 'Iron', 'Gold'],
-    Crimstone: ['Wood', 'Gold', 'Crimstone']
+    Crimstone: ['Wood', 'Gold', 'Crimstone'],
+    Salt: ['Wood', 'Salt']
   };
 
   const requiredResources = chainMap[currentResource] || [currentResource];
