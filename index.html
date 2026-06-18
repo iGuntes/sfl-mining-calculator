@@ -786,24 +786,43 @@ function buildOptimalPlanTooltip(costs, currentResource) {
 
   return `<div class="tooltip-heading">План для ${currentResource}</div>${lines.join('<br>')}`;
 }
+function buildAcquisitionTooltip(resource, mode, marketPrice, craftCost) {
+  const modeName = mode === 'market' ? 'Рыночная база' : mode === 'self' ? 'Своя добыча' : 'Оптимальная цепочка';
+  let html = `<div class="tooltip-heading">Способ получения (${modeName})</div>`;
+  html += `• <b>Купить готовое:</b> ${fmt(marketPrice, 6)} FLOWER<br>`;
+  
+  if (mode === 'market') {
+    html += `• <b>Скрафтить (сырье с рынка):</b> ${fmt(craftCost, 6)} FLOWER<br>`;
+    html += `<br><span class="muted">ℹ️ Сравнивает покупку готового ресурса с покупкой сырья для его крафта.</span>`;
+  } else if (mode === 'self') {
+    html += `• <b>Добыть вручную:</b> ${fmt(craftCost, 6)} FLOWER<br>`;
+    html += `<br><span class="muted">ℹ️ Сравнивает покупку готового ресурса с затратами на его ручной крафт в идеальных условиях.</span>`;
+  } else if (mode === 'optimal') {
+    html += `• <b>Скрафтить по цепочке:</b> ${fmt(craftCost, 6)} FLOWER<br>`;
+    html += `<br><span class="muted">ℹ️ Сравнивает покупку готового ресурса с крафтом, где каждый ингредиент цепочки был добыт или куплен максимально выгодно.</span>`;
+  }
+  return html;
+}
     function recalc() {
-      const useOptimal = !!els.optimalChain?.checked;
-      const mode = els.costMode.value;
-      const basisMode = useOptimal ? 'optimal' : mode;
-      document.body.classList.toggle('optimal-chain-on', useOptimal);
-      if (els.costModeRow) els.costModeRow.classList.toggle('cost-mode-disabled', useOptimal);
-      if (els.unitCostModeHint) els.unitCostModeHint.textContent = useOptimal ? 'оптимальная цепочка' : getCostModeHint(mode);
-      const marketCostsData = getToolCosts('market');
-      const selfCostsData = getToolCosts('self');
-      const activeCostsData = getToolCosts(basisMode);
-      const { toolCosts, mineUnitCosts } = activeCostsData;
-      const optimalSources = activeCostsData.sources || null;
-      const rows = [];
-      let profitableCount = 0;
-      let buyCount = 0;
-      let best = { resource: null, profit: -Infinity };
+  const useOptimal = !!els.optimalChain?.checked;
+  const mode = els.costMode.value;
+  const basisMode = useOptimal ? 'optimal' : mode;
+  document.body.classList.toggle('optimal-chain-on', useOptimal);
+  if (els.costModeRow) els.costModeRow.classList.toggle('cost-mode-disabled', useOptimal);
+  if (els.unitCostModeHint) els.unitCostModeHint.textContent = useOptimal ? 'оптимальная цепочка' : getCostModeHint(mode);
 
-for (const resource of RESOURCE_ORDER) {
+  const marketCostsData = getToolCosts('market');
+  const selfCostsData = getToolCosts('self');
+  const activeCostsData = getToolCosts(basisMode);
+
+  const { toolCosts, mineUnitCosts } = activeCostsData;
+  const optimalSources = activeCostsData.sources || null;
+  const rows = [];
+  let profitableCount = 0;
+  let buyCount = 0;
+  let best = { resource: null, profit: -Infinity };
+
+  for (const resource of RESOURCE_ORDER) {
     const marketPrice = getPrice(resource);
     const effectiveSellPrice = getEffectiveSellPrice(resource);
     const yieldValue = getYield(resource);
@@ -814,149 +833,161 @@ for (const resource of RESOURCE_ORDER) {
     const selfUnitCost = selfCostsData.mineUnitCosts[resource];
     const unitCost = basisMode === 'market' ? marketUnitCost : mineUnitCosts[resource];
     const optimalSource = optimalSources?.[resource];
-    
-    // ==== ВСТАВИТЬ СЮДА ====
-    // Генерируем индивидуальный тултип для текущего ресурса в цикле
+
     const optimalPlanTooltipHtml = useOptimal ? buildOptimalPlanTooltip(activeCostsData, resource) : '';
-    // =======================
 
-    const acquisitionOptions = [
-          { label: 'Купить', value: marketPrice },
-          { label: 'Добыть по рынку', value: marketUnitCost },
-          { label: 'Добыть вручную', value: selfUnitCost }
-        ].filter(option => Number.isFinite(option.value));
-        const bestAcquisitionCost = acquisitionOptions.length ? Math.min(...acquisitionOptions.map(option => option.value)) : NaN;
-        const bestAcquisitionWinners = acquisitionOptions.filter(option => Math.abs(option.value - bestAcquisitionCost) < 1e-12);
-        const bestAcquisitionMethod = !acquisitionOptions.length ? '—' : bestAcquisitionWinners.length > 1 ? 'Одинаково' : bestAcquisitionWinners[0].label;
+    // --- НОВАЯ ЛОГИКА ДЛЯ КОЛОНКИ "ЛУЧШИЙ СПОСОБ ПОЛУЧИТЬ" ---
+    const optimalCraftCost = activeCostsData.toolCosts[resource] / yieldValue;
+    const craftCost = basisMode === 'market' ? marketUnitCost : basisMode === 'self' ? selfUnitCost : optimalCraftCost;
+    
+    const acquisitionTooltipHtml = buildAcquisitionTooltip(resource, basisMode, marketPrice, craftCost);
+    const acquisitionOptions = [ { label: 'Купить', value: marketPrice } ];
+    
+    if (basisMode === 'market' && Number.isFinite(craftCost)) {
+      acquisitionOptions.push({ label: 'Скрафтить по рынку', value: craftCost });
+    } else if (basisMode === 'self' && Number.isFinite(craftCost)) {
+      acquisitionOptions.push({ label: 'Добыть вручную', value: craftCost });
+    } else if (basisMode === 'optimal' && Number.isFinite(craftCost)) {
+      acquisitionOptions.push({ label: 'Скрафтить по цепочке', value: craftCost });
+    }
 
-        const profitPerUnit = effectiveSellPrice - unitCost;
-        const profitPerTool = profitPerUnit * yieldValue;
-        const roi = unitCost > 0 ? (profitPerUnit / unitCost) * 100 : NaN;
+    const validOptions = acquisitionOptions.filter(option => Number.isFinite(option.value));
+    const bestAcquisitionCost = validOptions.length ? Math.min(...validOptions.map(option => option.value)) : NaN;
+    const bestAcquisitionWinners = validOptions.filter(option => Math.abs(option.value - bestAcquisitionCost) < 1e-12);
+    const bestAcquisitionMethod = !validOptions.length ? '—' : bestAcquisitionWinners.length > 1 ? 'Одинаково' : bestAcquisitionWinners[0].label;
+    
+    const acqClass = bestAcquisitionMethod === 'Купить' ? 'bad' : bestAcquisitionMethod === 'Скрафтить по рынку' ? 'warn' : (bestAcquisitionMethod === 'Добыть вручную' || bestAcquisitionMethod === 'Скрафтить по цепочке') ? 'good' : '';
+    // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
 
-if (Number.isFinite(profitPerUnit) && profitPerUnit > best.profit) {
-          best = { resource, profit: profitPerUnit };
-        }
+    const profitPerUnit = effectiveSellPrice - unitCost;
+    const profitPerTool = profitPerUnit * yieldValue;
+    const roi = unitCost > 0 ? (profitPerUnit / unitCost) * 100 : NaN;
 
-        // --- УМНЫЙ АНАЛИЗ И СОВЕТЫ (3 СЦЕНАРИЯ) ---
-        let oppLossDisplay = '—';
-        let customAdviceShort = '—';
-        let customAdviceClass = '—';
-        let customAdviceTooltip = '';
+    if (Number.isFinite(profitPerUnit) && profitPerUnit > best.profit) {
+      best = { resource, profit: profitPerUnit };
+    }
 
-        if (Number.isFinite(unitCost)) {
-          const opportunityLoss = unitCost - effectiveSellPrice;
+    let oppLossDisplay = '—';
+    let customAdviceShort = '—';
+    let customAdviceClass = '—';
+    let customAdviceTooltip = '';
+
+    if (Number.isFinite(unitCost)) {
+      const opportunityLoss = unitCost - effectiveSellPrice;
+      
+      if (unitCost < effectiveSellPrice) {
+        profitableCount++; // увеличиваем счетчик KPI
+        customAdviceShort = `Делать и продавать`;
+        customAdviceClass = `good`;
+        customAdviceTooltip = `<div class="tooltip-heading">Всё отлично ✅</div>Производить этот ресурс выгодно как для крафта, так и для продажи на рынке. Вы получаете чистую прибыль.`;
+        
+        oppLossDisplay = `
+          <span class="good tooltip-trigger" tabindex="0">
+            Нет
+            <template class="tooltip-source">
+              <div class="tooltip-heading">Нет потерь</div>
+              Добыча этого ресурса выгоднее покупки. Упущенной выгоды нет!
+            </template>
+          </span>`;
           
-          if (unitCost < effectiveSellPrice) {
-            // СЦЕНАРИЙ 1: ЗЕЛЕНАЯ ЗОНА
-            customAdviceShort = `Делать и продавать`;
-            customAdviceClass = `good`;
-            customAdviceTooltip = `<div class="tooltip-heading">Всё отлично ✅</div>Производить этот ресурс выгодно как для крафта, так и для продажи на рынке. Вы получаете чистую прибыль.`;
-            
-            oppLossDisplay = `
-              <span class="good tooltip-trigger" tabindex="0">
-                Нет
-                <template class="tooltip-source">
-                  <div class="tooltip-heading">Нет потерь</div>
-                  Добыча этого ресурса выгоднее покупки. Упущенной выгоды нет!
-                </template>
-              </span>`;
-              
-          } else if (unitCost >= effectiveSellPrice && unitCost < marketPrice) {
-            // СЦЕНАРИЙ 2: СЕРАЯ ЗОНА
-            customAdviceShort = `Для себя: Крафт<br><span class="bad" style="font-size:11px;">Рынок: Сбыт сырья</span>`;
-            customAdviceClass = `warn`; 
-            customAdviceTooltip = `<div class="tooltip-heading">Внимание ⚠️</div>Крафт на продажу убыточен (рынок оценивает сырье дороже готового ресурса).<br><br><b>Оставьте для себя</b> (это дешевле покупки), но не продавайте.`;
-            
-            oppLossDisplay = `
-              <span class="bad tooltip-trigger" tabindex="0">
-                -${fmt(opportunityLoss, 6)}
-                <template class="tooltip-source">
-                  <div class="tooltip-heading">Упущенная выгода!</div>
-                  С каждой проданной единицы вы теряете <b>${fmt(opportunityLoss, 6)} FLOWER</b> по сравнению с продажей сырья. Не продавайте этот ресурс!
-                </template>
-              </span>`;
-              
-          } else if (unitCost >= marketPrice) {
-            // СЦЕНАРИЙ 3: КРАСНАЯ ЗОНА
-            customAdviceShort = `Для себя: Купить<br><span class="bad" style="font-size:11px;">Рынок: Сбыт сырья</span>`;
-            customAdviceClass = `bad`;
-            customAdviceTooltip = `<div class="tooltip-heading">Полный убыток 🛑</div>Ресурс на рынке стоит дешевле, чем сырье для него.<br><br>Нужен ресурс — купите. Нужны деньги — продайте сырье.`;
-            
-            oppLossDisplay = `
-              <span class="bad tooltip-trigger" tabindex="0">
-                -${fmt(opportunityLoss, 6)}
-                <template class="tooltip-source">
-                  <div class="tooltip-heading">Упущенная выгода!</div>
-                  Крафтить убыточно даже для себя. Покупка готового ресурса обойдется дешевле.
-                </template>
-              </span>`;
-          }
-        }
-
-rows.push(`
-          <tr>
-            <td><div class="cell-clamp"><strong>${resource}</strong></div></td>
-            <td class="col-mobile-hide"><div class="cell-clamp">${fmt(marketPrice, 6)}</div></td>
-            <td class="col-mobile-hide"><div class="cell-clamp">${fmt(effectiveSellPrice, 6)}</div></td>
-            <td  class="col-mobile-hide ${getUnitCostClass(unitCost, marketPrice)}">
-              <span class="tooltip-trigger" tabindex="0" aria-label="Формула себестоимости ${resource}">
-                <span class="cell-clamp">${fmt(unitCost, 6)}</span>
-                <template class="tooltip-source">${unitTooltipHtml}</template>
-              </span>
-            </td>
-            <td class="col-mobile-hide">
-              <span class="tooltip-trigger" tabindex="0" aria-label="Формула стоимости инструмента ${resource}">
-                <span class="cell-clamp">${fmt(toolCosts[resource], 6)}</span>
-                <template class="tooltip-source">${toolTooltipHtml}</template>
-              </span>
-            </td>
-            <td class="col-mobile-hide col-optimal ${optimalSource?.key === 'mine' ? 'good' : ''}">
-              ${useOptimal ? `<span class="tooltip-trigger" tabindex="0" aria-label="План цепочки ${resource}"><span>${optimalSource?.label || '—'}</span><template class="tooltip-source">${optimalPlanTooltipHtml}</template></span>` : '—'}
-            </td>
-            <td class="${bestAcquisitionMethod === 'Купить' ? 'bad' : bestAcquisitionMethod === 'Добыть по рынку' ? 'warn' : bestAcquisitionMethod === 'Добыть вручную' ? 'good' : ''}"><div class="cell-clamp">${bestAcquisitionMethod}</div></td>
-            
-            <td class="col-mobile-hide">${oppLossDisplay}</td>
-            
-            <td class="col-mobile-hide ${profitPerUnit >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerUnit, 6)}</div></td>
-            <td class="col-mobile-hide ${profitPerTool >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerTool, 6)}</div></td>
-            <td class="col-mobile-hide ${roi >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${pct(roi)}</div></td>
-            <td class="${customAdviceClass}">
-              <span class="tooltip-trigger" tabindex="0" aria-label="Стратегия ${resource}">
-                <span>${customAdviceShort}</span>
-                <template class="tooltip-source">${customAdviceTooltip}</template>
-              </span>
-            </td>
-          </tr>
-        `);
-      }
-
-      els.resultsBody.innerHTML = rows.join('');
-      els.profitableCount.textContent = String(profitableCount);
-      els.buyCount.textContent = String(buyCount);
-      els.bestProfit.textContent = Number.isFinite(best.profit) ? fmt(best.profit, 6) : '—';
-      els.bestResource.textContent = best.resource || '—';
-
-      const summary = [];
-      if (useOptimal) {
-        summary.push('Оптимальная цепочка: для каждого ресурса выбрано дешевле — купить или добыть (см. колонку «Откуда»).');
-      } else {
-        const modeLabel = mode === 'market' ? 'Рыночная база' : 'Собственная добыча';
-        summary.push(`Модель себестоимости: ${modeLabel}. Цепочка по вашему среднему дропу.`);
-      }
-      if (Number.isFinite(best.profit)) {
-        summary.push(`Макс. профит на 1 ед.: ${best.resource} — ${fmt(best.profit, 6)} FLOWER.`);
-      }
-      els.summaryNote.textContent = summary.join(' ');
-
-      const usesFallback = Object.keys(marketData.p2p || {}).length === 0;
-      if (usesFallback) {
-        els.fallbackNote.style.display = 'block';
-        els.fallbackNote.textContent = `Fallback p2p snapshot: Wood ${fmt(FALLBACK_P2P.Wood, 6)}, Stone ${fmt(FALLBACK_P2P.Stone, 6)}, Iron ${fmt(FALLBACK_P2P.Iron, 6)}, Gold ${fmt(FALLBACK_P2P.Gold, 6)}, Crimstone ${fmt(FALLBACK_P2P.Crimstone, 6)}.`;
-      } else {
-        els.fallbackNote.style.display = 'none';
-        els.fallbackNote.textContent = '';
+      } else if (unitCost >= effectiveSellPrice && unitCost < marketPrice) {
+        customAdviceShort = `Для себя: Крафт<br><span class="bad" style="font-size:11px;">Рынок: Сбыт сырья</span>`;
+        customAdviceClass = `warn`; 
+        customAdviceTooltip = `<div class="tooltip-heading">Внимание ⚠️</div>Крафт на продажу убыточен (рынок оценивает сырье дороже готового ресурса).<br><br><b>Оставьте для себя</b> (это дешевле покупки), но не продавайте.`;
+        
+        oppLossDisplay = `
+          <span class="bad tooltip-trigger" tabindex="0">
+            -${fmt(opportunityLoss, 6)}
+            <template class="tooltip-source">
+              <div class="tooltip-heading">Упущенная выгода!</div>
+              С каждой проданной единицы вы теряете <b>${fmt(opportunityLoss, 6)} FLOWER</b> по сравнению с продажей сырья. Не продавайте этот ресурс!
+            </template>
+          </span>`;
+          
+      } else if (unitCost >= marketPrice) {
+        buyCount++; // увеличиваем счетчик KPI
+        customAdviceShort = `Для себя: Купить<br><span class="bad" style="font-size:11px;">Рынок: Сбыт сырья</span>`;
+        customAdviceClass = `bad`;
+        customAdviceTooltip = `<div class="tooltip-heading">Полный убыток 🛑</div>Ресурс на рынке стоит дешевле, чем сырье для него.<br><br>Нужен ресурс — купите. Нужны деньги — продайте сырье.`;
+        
+        oppLossDisplay = `
+          <span class="bad tooltip-trigger" tabindex="0">
+            -${fmt(opportunityLoss, 6)}
+            <template class="tooltip-source">
+              <div class="tooltip-heading">Упущенная выгода!</div>
+              Крафтить убыточно даже для себя. Покупка готового ресурса обойдется дешевле.
+            </template>
+          </span>`;
       }
     }
+
+    rows.push(`
+      <tr>
+        <td><div class="cell-clamp"><strong>${resource}</strong></div></td>
+        <td class="col-mobile-hide"><div class="cell-clamp">${fmt(marketPrice, 6)}</div></td>
+        <td class="col-mobile-hide"><div class="cell-clamp">${fmt(effectiveSellPrice, 6)}</div></td>
+        <td class="col-mobile-hide ${getUnitCostClass(unitCost, marketPrice)}">
+          <span class="tooltip-trigger" tabindex="0" aria-label="Формула себестоимости ${resource}">
+            <span class="cell-clamp">${fmt(unitCost, 6)}</span>
+            <template class="tooltip-source">${unitTooltipHtml}</template>
+          </span>
+        </td>
+        <td class="col-mobile-hide">
+          <span class="tooltip-trigger" tabindex="0" aria-label="Формула стоимости инструмента ${resource}">
+            <span class="cell-clamp">${fmt(toolCosts[resource], 6)}</span>
+            <template class="tooltip-source">${toolTooltipHtml}</template>
+          </span>
+        </td>
+        <td class="col-mobile-hide col-optimal ${optimalSource?.key === 'mine' ? 'good' : ''}">
+          ${useOptimal ? `<span class="tooltip-trigger" tabindex="0" aria-label="План цепочки ${resource}"><span>${optimalSource?.label || '—'}</span><template class="tooltip-source">${optimalPlanTooltipHtml}</template></span>` : '—'}
+        </td>
+        <td class="${acqClass}">
+          <span class="tooltip-trigger" tabindex="0" aria-label="Сравнение способов получения ${resource}">
+            <div class="cell-clamp">${bestAcquisitionMethod}</div>
+            <template class="tooltip-source">${acquisitionTooltipHtml}</template>
+          </span>
+        </td>
+        <td class="col-mobile-hide">${oppLossDisplay}</td>
+        <td class="col-mobile-hide ${profitPerUnit >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerUnit, 6)}</div></td>
+        <td class="col-mobile-hide ${profitPerTool >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerTool, 6)}</div></td>
+        <td class="col-mobile-hide ${roi >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${pct(roi)}</div></td>
+        <td class="${customAdviceClass}">
+          <span class="tooltip-trigger" tabindex="0" aria-label="Стратегия ${resource}">
+            <span>${customAdviceShort}</span>
+            <template class="tooltip-source">${customAdviceTooltip}</template>
+          </span>
+        </td>
+      </tr>
+    `);
+  }
+
+  els.resultsBody.innerHTML = rows.join('');
+  els.profitableCount.textContent = String(profitableCount);
+  els.buyCount.textContent = String(buyCount);
+  els.bestProfit.textContent = Number.isFinite(best.profit) ? fmt(best.profit, 6) : '—';
+  els.bestResource.textContent = best.resource || '—';
+
+  const summary = [];
+  if (useOptimal) {
+    summary.push('Оптимальная цепочка: для каждого ресурса выбрано дешевле — купить или добыть (см. колонку «Откуда»).');
+  } else {
+    const modeLabel = mode === 'market' ? 'Рыночная база' : 'Собственная добыча';
+    summary.push(`Модель себестоимости: ${modeLabel}. Цепочка по вашему среднему дропу.`);
+  }
+  if (Number.isFinite(best.profit)) {
+    summary.push(`Макс. профит на 1 ед.: ${best.resource} — ${fmt(best.profit, 6)} FLOWER.`);
+  }
+  els.summaryNote.textContent = summary.join(' ');
+
+  const usesFallback = Object.keys(marketData.p2p || {}).length === 0;
+  if (usesFallback) {
+    els.fallbackNote.style.display = 'block';
+    els.fallbackNote.textContent = `Fallback p2p snapshot: Wood ${fmt(FALLBACK_P2P.Wood, 6)}, Stone ${fmt(FALLBACK_P2P.Stone, 6)}, Iron ${fmt(FALLBACK_P2P.Iron, 6)}, Gold ${fmt(FALLBACK_P2P.Gold, 6)}, Crimstone ${fmt(FALLBACK_P2P.Crimstone, 6)}.`;
+  } else {
+    els.fallbackNote.style.display = 'none';
+    els.fallbackNote.textContent = '';
+  }
+}
 
     async function loadSflWorldPrices() {
       const res = await fetch('/proxy/sfl-prices', { headers: { Accept: 'application/json' } });
