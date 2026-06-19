@@ -3,22 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SFL Mining Calculator</title>
+  <title>SFL Theorycrafting Симулятор</title>
   <style>
     :root {
-      --bg: #111827;
-      --panel: #1f2937;
-      --panel-2: #243244;
-      --text: #f9fafb;
-      --muted: #9ca3af;
-      --line: #374151;
-      --accent: #22c55e;
-      --accent-2: #38bdf8;
-      --warn: #f59e0b;
-      --bad: #ef4444;
-      --good: #10b981;
-      --radius: 16px;
-      --shadow: 0 12px 40px rgba(0,0,0,0.25);
+      --bg: #111827; --panel: #1f2937; --panel-2: #243244; --text: #f9fafb; --muted: #9ca3af;
+      --line: #374151; --accent: #22c55e; --accent-2: #38bdf8; --warn: #f59e0b; --bad: #ef4444; --good: #10b981;
+      --radius: 16px; --shadow: 0 12px 40px rgba(0,0,0,0.25);
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: radial-gradient(circle at top right, rgba(56,189,248,0.12), transparent 28%), radial-gradient(circle at top left, rgba(34,197,94,0.12), transparent 32%), var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
@@ -43,7 +33,7 @@
     input:focus, select:focus { outline: 2px solid rgba(56,189,248,0.55); outline-offset: 2px; border-color: rgba(56,189,248,0.55); }
     button { cursor: pointer; font-weight: 700; background: linear-gradient(135deg, rgba(34,197,94,0.18), rgba(56,189,248,0.18)); transition: transform .15s ease, border-color .15s ease, background .15s ease; }
     button:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.18); }
-    .btn-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 4px; }
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
     .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
     .kpi { padding: 16px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
     .kpi .label { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
@@ -69,10 +59,6 @@
     .formula-tooltip { position: fixed; z-index: 1000; max-width: min(380px, calc(100vw - 24px)); padding: 12px 14px; background: var(--panel-2); border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; box-shadow: var(--shadow); font-size: 12px; line-height: 1.55; color: var(--text); pointer-events: none; }
     .formula-tooltip[hidden] { display: none !important; }
     .formula-tooltip .tooltip-heading { font-weight: 700; margin-bottom: 6px; color: #e2e8f0; }
-    .head-clamp, .cell-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; line-height: 1.35; max-height: calc(1.35em * 3); white-space: normal; word-break: normal; overflow-wrap: anywhere; }
-    .cell-center { text-align: left; }
-    pre.debug { white-space:pre-wrap; word-break:break-word; background:#020617; padding:12px; border-radius:12px; border:1px solid #334155; color:#cbd5e1; font-size:12px; }
-    @media (max-width: 1260px) { .hero, .grid { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } table { width: 100%; table-layout: fixed; } }
     .col-optimal { display: none; }
     body.optimal-chain-on .col-optimal { display: table-cell; }
     .optimal-toggle { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(34,197,94,0.25); background: rgba(34,197,94,0.06); cursor: pointer; }
@@ -82,24 +68,26 @@
     .skill-toggle { display: grid; grid-template-columns: 20% 80%; align-items: start;}
     .skill-toggle input { margin-top: 3px; justify-self: center;}
     .skill-text { display: flex; flex-direction: column; gap: 1px;}
-	@media (max-width: 760px) { .col-mobile-hide { display: none !important; } .wrap { width: calc(100% - 12px); } .row, .resource-row { grid-template-columns: 1fr; } .btn-row, .kpis { grid-template-columns: 1fr; } .hero-main, .hero-side, .section { padding: 16px; } th, td { font-size: 12px; padding: 10px 8px; } }
+    .buff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 12px; }
+    .buff-checkbox { cursor: pointer; accent-color: var(--accent); }
+    @media (max-width: 760px) { .col-mobile-hide { display: none !important; } .wrap { width: calc(100% - 12px); } .row, .resource-row { grid-template-columns: 1fr; } .btn-row, .kpis { grid-template-columns: 1fr; } .hero-main, .hero-side, .section { padding: 16px; } th, td { font-size: 12px; padding: 10px 8px; } }
   </style>
 </head>
 <body>
   <div class="wrap">
     <section class="hero">
       <div class="card hero-main">
-        <h1>SFL калькулятор выгодности добычи</h1>
-        <p>Сравнивает ручную добычу Wood / Stone / Iron / Gold / Crimstone против покупки на рынке в FLOWER. Цены ресурсов подтягиваются из SFL World API</p>
+        <h1>SFL Theorycrafting Симулятор</h1>
+        <p>Анализируй и прогнозируй экономику фермы. Введи ID для загрузки, а затем включай/выключай баффы, чтобы увидеть как они повлияют на профит.</p>
         <div class="badge-row">
           <div class="badge">Цены: P2P рынок (SFL World)</div>
-          <div class="badge">Режим: Рынок / Добыча / Гибрид</div>
-          <div class="badge">Профит на 1 ресурс и на 1 инструмент</div>
+          <div class="badge">Авто-загрузка инвентаря</div>
+          <div class="badge">Умный расчет AoE</div>
         </div>
         <div class="row small" style="margin-top:16px; max-width: 420px;">
           <div>
             <label for="landId">Номер фермы</label>
-            <div class="help">Введите ID фермы для загрузки навыков и бустов из API.</div>
+            <div class="help">Официальный API Sunflower Land.</div>
           </div>
           <input id="landId" type="number" min="1" step="1" value="129628" />
         </div>
@@ -112,52 +100,54 @@
         <h2>Статус API</h2>
         <div class="stack" style="gap:12px; margin-top: 8px;">
           <div class="pill" id="apiStatus">Ожидание загрузки…</div>
-          <div><strong>Обновлено:</strong> <span class="muted" id="updatedAt">—</span></div>
+          <div><strong>Цены обновлены:</strong> <br><span class="muted" id="updatedAt">—</span></div>
         </div>
       </div>
     </section>
 
     <section class="grid">
       <div class="stack">
+        
         <div class="card section">
-          <h2>Параметры</h2>
+          <h2>Симулятор Баффов <span class="help" style="display:inline">(влияют на добычу)</span></h2>
+          <div id="buffsContainer" class="buff-grid">
+            </div>
+        </div>
+
+        <div class="card section">
+          <h2>Параметры и скидки</h2>
           <div class="inputs">
-<div>
-  <label>Скидки на инструменты</label>
-  <div class="help">Автоматически подтягиваются из данных фермы, но можно включать и выключать вручную.</div>
-</div>
+            <label class="optimal-toggle skill-toggle" for="fellerDiscount">
+              <input type="checkbox" id="fellerDiscount" />
+              <span class="skill-text">
+                <strong>Feller's Discount</strong>
+                <span class="help">-20% стоимости топора</span>
+              </span>
+            </label>
 
-<label class="optimal-toggle skill-toggle" for="fellerDiscount">
-  <input type="checkbox" id="fellerDiscount" />
-  <span class="skill-text">
-    <strong>Feller's Discount</strong>
-    <span class="help">-20% стоимости топора</span>
-  </span>
-</label>
+            <label class="optimal-toggle skill-toggle" for="frugalMiner">
+              <input type="checkbox" id="frugalMiner" />
+              <span class="skill-text">
+                <strong>Frugal Miner</strong>
+                <span class="help">-20% стоимости всех кирок</span>
+              </span>
+            </label>
 
-<label class="optimal-toggle skill-toggle" for="frugalMiner">
-  <input type="checkbox" id="frugalMiner" />
-  <span class="skill-text">
-    <strong>Frugal Miner</strong>
-    <span class="help">-20% стоимости всех кирок</span>
-  </span>
-</label>
+            <label class="optimal-toggle skill-toggle" for="cheapRakes">
+              <input type="checkbox" id="cheapRakes" />
+              <span class="skill-text">
+                <strong>Cheap Rakes</strong>
+                <span class="help">-20% стоимости граблей</span>
+              </span>
+            </label>
 
-<label class="optimal-toggle skill-toggle" for="cheapRakes">
-  <input type="checkbox" id="cheapRakes" />
-  <span class="skill-text">
-    <strong>Cheap Rakes</strong>
-    <span class="help">-20% стоимости граблей</span>
-  </span>
-</label>
-
-<label class="optimal-toggle skill-toggle" for="saltSculpture">
-  <input type="checkbox" id="saltSculpture" />
-  <span class="skill-text">
-    <strong>Salt Sculpture Lv4</strong>
-    <span class="help">-10% стоимости граблей</span>
-  </span>
-</label>
+            <label class="optimal-toggle skill-toggle" for="saltSculpture">
+              <input type="checkbox" id="saltSculpture" />
+              <span class="skill-text">
+                <strong>Salt Sculpture Lv4</strong>
+                <span class="help">-10% стоимости граблей</span>
+              </span>
+            </label>
 
             <div class="row small" id="costModeRow">
               <div>
@@ -174,14 +164,13 @@
               <input type="checkbox" id="optimalChain" />
               <span>
                 <strong>Оптимальная цепочка</strong>
-                <span class="help">Отдельный расчёт: для каждого ресурса в цепочке выбирается дешевле — купить на рынке или добыть (с учётом уже выбранного плана для предыдущих звеньев). Не заменяет модель себестоимости — включается поверх.</span>
+                <span class="help">Умный план для крафта (учитывает упущенную выгоду на каждом шаге).</span>
               </span>
             </label>
 
             <div class="row small">
               <div>
-                <label for="p2pFee">Комиссия продажи в P2P</label>
-                <div class="help">Вычитается из цены продажи на P2P рынке.</div>
+                <label for="p2pFee">Комиссия P2P</label>
               </div>
               <select id="p2pFee">
                 <option value="0.10">10%</option>
@@ -192,8 +181,7 @@
 
             <div class="row">
               <div>
-                <label for="coinRate">Курс COIN к FLOWER</label>
-                <div class="help">Задаётся от обратного: сколько COIN стоит 1 FLOWER. По умолчанию 1 FLOWER = 1000 COIN.</div>
+                <label for="coinRate">Курс COIN (за 1 FLOWER)</label>
               </div>
               <input id="coinRate" type="number" min="0.0001" step="0.01" value="1000" />
             </div>
@@ -201,18 +189,16 @@
         </div>
 
         <div class="card section">
-          <h2>Средний дроп с 1 инструмента</h2>
+          <h2>Средний дроп (Шт / инструмент)</h2>
           <div class="resource-grid">
-            <div class="resource-row"><label for="yieldWood">Wood (топор)</label><input id="yieldWood" type="number" min="0.0001" step="0.01" value="1.90" /><span class="muted">шт./инструмент</span></div>
-            <div class="resource-row"><label for="yieldStone">Stone (деревянная кирка)</label><input id="yieldStone" type="number" min="0.0001" step="0.01" value="2.39" /><span class="muted">шт./инструмент</span></div>
-            <div class="resource-row"><label for="yieldIron">Iron (каменная кирка)</label><input id="yieldIron" type="number" min="0.0001" step="0.01" value="2.15" /><span class="muted">шт./инструмент</span></div>
-            <div class="resource-row"><label for="yieldGold">Gold (железная кирка)</label><input id="yieldGold" type="number" min="0.0001" step="0.01" value="1.80" /><span class="muted">шт./инструмент</span></div>
-            <div class="resource-row"><label for="yieldCrimstone">Crimstone (золотая кирка)</label><input id="yieldCrimstone" type="number" min="0.0001" step="0.01" value="1.60" /><span class="muted">шт./инструмент</span></div>
-            <div class="resource-row"><label for="yieldSalt">Salt (грабли)</label><input id="yieldSalt" type="number" min="0.0001" step="0.01" value="14" /><span class="muted">шт./инструмент</span></div>
+            <div class="resource-row"><label for="yieldWood">Wood</label><input id="yieldWood" type="number" min="0.0001" step="0.01" value="1.00" readonly style="opacity:0.7" /></div>
+            <div class="resource-row"><label for="yieldStone">Stone</label><input id="yieldStone" type="number" min="0.0001" step="0.01" value="1.00" readonly style="opacity:0.7" /></div>
+            <div class="resource-row"><label for="yieldIron">Iron</label><input id="yieldIron" type="number" min="0.0001" step="0.01" value="1.00" readonly style="opacity:0.7" /></div>
+            <div class="resource-row"><label for="yieldGold">Gold</label><input id="yieldGold" type="number" min="0.0001" step="0.01" value="1.00" readonly style="opacity:0.7" /></div>
+            <div class="resource-row"><label for="yieldCrimstone">Crimstone</label><input id="yieldCrimstone" type="number" min="0.0001" step="0.01" value="1.00" readonly style="opacity:0.7" /></div>
+            <div class="resource-row"><label for="yieldSalt">Salt</label><input id="yieldSalt" type="number" min="0.0001" step="0.01" value="14.0" /></div>
           </div>
-          <div style="margin-top: 12px;">
-            <button id="presetBtn" style="width: 100%;">Сбросить дроп к 1</button>
-          </div>
+          <div class="help" style="margin-top: 12px; text-align: center;">Изменяйте галочки в симуляторе, чтобы обновить эти значения.</div>
         </div>
       </div>
 
@@ -226,7 +212,6 @@
 
         <div class="card section">
           <h2>Результаты</h2>
-          <div class="help" style="margin-bottom:12px">Для быстрой оценки эффективности добычи дерева и руды</div>
           <div class="table-wrap">
             <table>
               <thead>
@@ -234,15 +219,15 @@
                   <th><span class="th-title">Ресурс</span></th>
                   <th class="col-mobile-hide"><span class="th-title">Покупка</span></th>
                   <th class="col-mobile-hide"><span class="th-title">Продажа</span></th>
-                  <th class="col-mobile-hide"><span class="th-title">Ценность сырья</span><span class="th-hint">(<span id="unitCostModeHint">рыночная база</span>, наведите на значение)</span></th>
-                  <th class="col-mobile-hide"><span class="th-title">Инструмент</span><span class="th-hint">(наведите на значение)</span></th>
+                  <th class="col-mobile-hide"><span class="th-title">Ценность сырья</span><span class="th-hint">(<span id="unitCostModeHint">рыночная база</span>)</span></th>
+                  <th class="col-mobile-hide"><span class="th-title">Инструмент</span></th>
                   <th class="col-optimal col-mobile-hide"><span class="th-title">Откуда</span><span class="th-hint">(план цепочки)</span></th>
                   <th><span class="th-title">Лучший способ получить</span></th>
-                  <th class="col-mobile-hide"><span class="th-title">Скрытый убыток</span><span class="th-hint">(упущ. выгода на 1 ед.)</span></th>
+                  <th class="col-mobile-hide"><span class="th-title">Скрытый убыток</span></th>
                   <th class="col-mobile-hide"><span class="th-title">Профит на 1 ед.</span></th>
-                  <th class="col-mobile-hide"><span class="th-title">Профит на 1 инструмент</span></th>
+                  <th class="col-mobile-hide"><span class="th-title">Профит (инструмент)</span></th>
                   <th class="col-mobile-hide"><span class="th-title">ROI</span></th>
-                  <th><span class="th-title">Совет</span><span class="th-hint">(наведите на значение)</span></th>
+                  <th><span class="th-title">Совет</span></th>
                 </tr>
               </thead>
               <tbody id="resultsBody"></tbody>
@@ -250,23 +235,6 @@
           </div>
           <div class="note" id="summaryNote">Загрузка цен…</div>
           <div class="note" id="fallbackNote" style="display:none; margin-top:10px;"></div>
-          <div class="note">
-            Подсказка: <strong>Оптимальная цепочка</strong> — отдельный план (колонка «Откуда»). <strong>«Лучший способ получить»</strong> — сравнение трёх способов без связки цепочки. <strong>«Совет»</strong> — при наведении.
-          </div>
-          <div class="footer">
-            Логика: цены с P2P рынка. «Себестоимость»: зелёный — дешевле покупки, красный — дороже. «Откуда» (при включённой оптимальной цепочке): Купить / Добывать по плану. KPI — выгода <strong>продажи</strong>.
-          </div>
-        </div>
-
-        <div class="card section">
-          <h2>Диагностика API</h2>
-          <div class="btn-row">
-            <button id="debugPricesBtn">Цены</button>
-            <button id="debugFarmBtn">Общие данные фермы</button>
-			<button id="debugBoostsBtn">Бусты ресурсов</button>
-          </div>
-         
-          <pre id="debugOut" class="debug">Пока пусто</pre>
         </div>
       </div>
     </section>
@@ -280,8 +248,39 @@
       Iron: { label: "Iron", yieldId: "yieldIron" },
       Gold: { label: "Gold", yieldId: "yieldGold" },
       Crimstone: { label: "Crimstone", yieldId: "yieldCrimstone" },
-      Salt: { label: "Salt", yieldId: "yieldSalt" } // Добавил эту строку
+      Salt: { label: "Salt", yieldId: "yieldSalt" } 
     };
+
+    // СЛОВАРЬ БАФФОВ ДЛЯ СИМУЛЯТОРА
+    const BUFF_DICTIONARY = {
+      "Lady Bug": { type: "yield", resource: "Iron", amount: 0.25 },
+      "Iron Bumpkin": { type: "yield", resource: "Iron", amount: 0.2 },
+      "Ferrous Favor": { type: "yield", resource: "Iron", amount: 0.2 },
+      "Bionic Drill": { type: "yield", resource: ["Iron", "Gold", "Crimstone"], amount: 0.5 },
+      "Gold Beetle": { type: "yield", resource: "Gold", amount: 0.1 },
+      "Golden Touch": { type: "yield", resource: "Gold", amount: 0.2 },
+      "Gilded Swordfish": { type: "yield", resource: "Gold", amount: 0.1 },
+      "Crimstone Clam": { type: "yield", resource: "Crimstone", amount: 0.1 },
+      "Miner's Monument": { type: "yield", resource: ["Iron", "Gold", "Stone"], amount: 0.1 },
+      "Apprentice Beaver": { type: "yield", resource: "Wood", amount: 0.2 },
+      "Woodcutter's Monument": { type: "yield", resource: "Wood", amount: 0.1 },
+      "Lumberjack's Extra": { type: "yield", resource: "Wood", amount: 0.1 },
+      "Tough Tree": { type: "yield", resource: "Wood", amount: 0.2 },
+      "Axe": { type: "yield", resource: "Wood", amount: 0.1 },
+      "Squirrel": { type: "yield", resource: "Wood", amount: 0.2 },
+      "Tunnel Mole": { type: "yield", resource: "Stone", amount: 0.25 },
+      "Rocky the Mole": { type: "yield", resource: "Stone", amount: 0.25 },
+      "Rock'N'Roll": { type: "yield", resource: "Stone", amount: 0.2 },
+      "Rocky Favor": { type: "yield", resource: "Stone", amount: 0.2 },
+      "Stone Beetle": { type: "yield", resource: "Stone", amount: 0.1 },
+      "Dinosaur Bone": { type: "yield", resource: "Stone", amount: 0.1 },
+      "T-Rex Skull": { type: "yield", resource: "Stone", amount: 0.1 },
+      "Amber Fossil": { type: "yield", resource: "Stone", amount: 0.15 },
+      "Tin Turtle": { type: "aoe", resource: "Stone", amount: 0.1, nodeKey: "stones" }
+    };
+
+    let farmAoEReference = null;
+    let farmNodesReference = null;
 
     const els = {
       costMode: document.getElementById("costMode"),
@@ -289,8 +288,6 @@
       optimalChain: document.getElementById("optimalChain"),
       p2pFee: document.getElementById("p2pFee"),
       coinRate: document.getElementById("coinRate"),
-      refreshBtn: document.getElementById("refreshBtn"),
-      presetBtn: document.getElementById("presetBtn"),
       updatedAt: document.getElementById("updatedAt"),
       apiStatus: document.getElementById("apiStatus"),
       unitCostModeHint: document.getElementById("unitCostModeHint"),
@@ -301,56 +298,89 @@
       buyCount: document.getElementById("buyCount"),
       bestProfit: document.getElementById("bestProfit"),
       bestResource: document.getElementById("bestResource"),
-      debugBtn: document.getElementById("debugBtn"),
-      debugPricesBtn: document.getElementById("debugPricesBtn"),
-      debugFarmBtn: document.getElementById("debugFarmBtn"),
-      debugBoostsBtn: document.getElementById("debugBoostsBtn"),
-      debugOut: document.getElementById("debugOut"),
       landId: document.getElementById("landId"),
       loadFarmBtn: document.getElementById("loadFarmBtn"),
       refreshBtnTop: document.getElementById("refreshBtnTop"),
       fellerDiscount: document.getElementById("fellerDiscount"),
       frugalMiner: document.getElementById("frugalMiner"),
-      cheapRakes: document.getElementById("cheapRakes"),     // Новое
-      saltSculpture: document.getElementById("saltSculpture") // Новое
+      cheapRakes: document.getElementById("cheapRakes"),
+      saltSculpture: document.getElementById("saltSculpture"),
+      buffsContainer: document.getElementById("buffsContainer")
     };
 
-    const FALLBACK_P2P = {
-      "Wood": 0.011986,
-      "Stone": 0.020139,
-      "Iron": 0.07709756,
-      "Gold": 0.3068,
-      "Crimstone": 0.6207
-    };
-    const FALLBACK_UPDATED_TEXT = "fallback snapshot";
+    const FALLBACK_P2P = { "Wood": 0.011986, "Stone": 0.020139, "Iron": 0.07709756, "Gold": 0.3068, "Crimstone": 0.6207 };
     let marketData = { p2p: {}, updatedAt: null, updated_text: null };
 
-    function num(value) {
-      const n = Number(value);
-      return Number.isFinite(n) ? n : 0;
+    // Инициализация симулятора баффов
+    function initBuffSimulator() {
+      for (const [name, buff] of Object.entries(BUFF_DICTIONARY)) {
+         const lbl = document.createElement('label');
+         lbl.className = 'optimal-toggle skill-toggle';
+         lbl.style.padding = '8px';
+         const resText = Array.isArray(buff.resource) ? 'Множ.' : buff.resource;
+         lbl.innerHTML = `
+           <input type="checkbox" value="${name}" class="buff-checkbox" />
+           <span class="skill-text">
+             <strong style="font-size: 13px;">${name}</strong>
+             <span class="help">${buff.type === 'aoe' ? 'AoE ' : ''}+${buff.amount} ${resText}</span>
+           </span>
+         `;
+         els.buffsContainer.appendChild(lbl);
+      }
+      document.querySelectorAll('.buff-checkbox').forEach(cb => {
+        cb.addEventListener('change', applySelectedBuffs);
+      });
     }
+
+    function applySelectedBuffs() {
+      let yields = { Wood: 1, Stone: 1, Iron: 1, Gold: 1, Crimstone: 1, Salt: Number(document.getElementById('yieldSalt').value) || 14 };
+      
+      document.querySelectorAll('.buff-checkbox').forEach(cb => {
+        if (cb.checked) {
+           const buff = BUFF_DICTIONARY[cb.value];
+           let resources = Array.isArray(buff.resource) ? buff.resource : [buff.resource];
+           
+           if (buff.type === 'yield') {
+             resources.forEach(r => yields[r] += buff.amount);
+           } else if (buff.type === 'aoe') {
+             let affectedCount = 8; // Базовое предположение, если ферма не загружена
+             let totalNodes = 18; 
+             if (farmAoEReference && farmAoEReference[cb.value]) {
+                affectedCount = 0;
+                for (let x in farmAoEReference[cb.value]) {
+                  affectedCount += Object.keys(farmAoEReference[cb.value][x]).length;
+                }
+             }
+             if (farmNodesReference && farmNodesReference[buff.nodeKey]) {
+                totalNodes = Object.keys(farmNodesReference[buff.nodeKey]).length;
+             }
+             if (totalNodes > 0) {
+                let avgBonus = (affectedCount * buff.amount) / totalNodes;
+                resources.forEach(r => yields[r] += avgBonus);
+             }
+           }
+        }
+      });
+
+      setYieldValue('yieldWood', Math.round(yields.Wood * 10000) / 10000);
+      setYieldValue('yieldStone', Math.round(yields.Stone * 10000) / 10000);
+      setYieldValue('yieldIron', Math.round(yields.Iron * 10000) / 10000);
+      setYieldValue('yieldGold', Math.round(yields.Gold * 10000) / 10000);
+      setYieldValue('yieldCrimstone', Math.round(yields.Crimstone * 10000) / 10000);
+      
+      recalc();
+    }
+
+    function num(value) { const n = Number(value); return Number.isFinite(n) ? n : 0; }
     function fmt(value, digits = 6) {
-  if (!Number.isFinite(value)) return "—";
-  
-  // Проверяем: если число целое, выводим без дробной части
-  if (Number.isInteger(value)) {
-    return value.toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-  }
-  
-  // Если число дробное, выводим с фиксированными 6 знаками
-  return value.toLocaleString("ru-RU", { minimumFractionDigits: digits, maximumFractionDigits: digits });
-}
-    function pct(value) {
       if (!Number.isFinite(value)) return "—";
-      return `${fmt(value, 2)}%`;
+      if (Number.isInteger(value)) return value.toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      return value.toLocaleString("ru-RU", { minimumFractionDigits: digits, maximumFractionDigits: digits });
     }
-    function getYield(resource) {
-      return Math.max(0.0001, num(document.getElementById(CONFIG[resource].yieldId).value));
-    }
-    function setYieldValue(id, value) {
-      const el = document.getElementById(id);
-      if (el && Number.isFinite(value) && value > 0) el.value = value;
-    }
+    function pct(value) { return !Number.isFinite(value) ? "—" : `${fmt(value, 2)}%`; }
+    function getYield(resource) { return Math.max(0.0001, num(document.getElementById(CONFIG[resource].yieldId).value)); }
+    function setYieldValue(id, value) { const el = document.getElementById(id); if (el && Number.isFinite(value) && value > 0) el.value = value; }
+    
     function flattenPrices(raw, out = {}) {
       if (Array.isArray(raw)) {
         for (const item of raw) {
@@ -385,8 +415,7 @@
       return normalized;
     }
     function pickFromBucket(bucket, resource) {
-      const variants = [resource, resource.toLowerCase(), resource.toUpperCase(), resource.replace(/ /g, ''), resource.replace(/ /g, '_')]
-        .map(v => String(v).toLowerCase().replace(/[^a-z0-9]/g, ''));
+      const variants = [resource, resource.toLowerCase(), resource.toUpperCase(), resource.replace(/ /g, ''), resource.replace(/ /g, '_')].map(v => String(v).toLowerCase().replace(/[^a-z0-9]/g, ''));
       for (const key of variants) {
         const value = Number(bucket[key]);
         if (Number.isFinite(value)) return value;
@@ -396,20 +425,14 @@
     function getPrice(resource) {
       const value = pickFromBucket(marketData.p2p || {}, resource);
       if (Number.isFinite(value)) return value;
-      const fallbackValue = FALLBACK_P2P[resource];
-      if (Number.isFinite(fallbackValue)) return fallbackValue;
-      return NaN;
+      return FALLBACK_P2P[resource] ?? NaN;
     }
     function getEffectiveSellPrice(resource) {
       const gross = getPrice(resource);
       if (!Number.isFinite(gross)) return NaN;
-      const fee = num(els.p2pFee.value);
-      return gross * (1 - fee);
+      return gross * (1 - num(els.p2pFee.value));
     }
-    function getCostModeHint(mode) {
-      if (mode === 'market') return 'рыночная база';
-      return 'своя добыча';
-    }
+    function getCostModeHint(mode) { return mode === 'market' ? 'рыночная база' : 'своя добыча'; }
     function pickCheaperSource(buyPrice, mineUnitCost) {
       const options = [];
       if (Number.isFinite(buyPrice)) options.push({ key: 'buy', label: 'Купить', value: buyPrice });
@@ -417,326 +440,197 @@
       if (!options.length) return { key: 'none', label: '—', value: NaN };
       return options.reduce((best, option) => (option.value < best.value ? option : best));
     }
-    function getChainCoinCosts() {
-  const chainCoinPart = {};
-  const woodUnitCoin = getToolCoinCost('Wood') / getYield('Wood');
-  chainCoinPart.Wood = getToolCoinCost('Wood');
-  chainCoinPart.Stone = 3 * woodUnitCoin + getToolCoinCost('Stone');
-  const stoneUnitCoin = chainCoinPart.Stone / getYield('Stone');
-  chainCoinPart.Iron = 3 * woodUnitCoin + 5 * stoneUnitCoin + getToolCoinCost('Iron');
-  const ironUnitCoin = chainCoinPart.Iron / getYield('Iron');
-  chainCoinPart.Gold = 3 * woodUnitCoin + 5 * ironUnitCoin + getToolCoinCost('Gold');
-  const goldUnitCoin = chainCoinPart.Gold / getYield('Gold');
-  chainCoinPart.Crimstone = 3 * woodUnitCoin + 3 * goldUnitCoin + getToolCoinCost('Crimstone');
-  chainCoinPart.Salt = 3 * woodUnitCoin + getToolCoinCost('Salt');
-  return chainCoinPart;
-}
-function applySkillState(data) {
-      // Ищем данные бампкина (в API они могут быть в корне, внутри state или data)
-      const bumpkin = data?.bumpkin || data?.state?.bumpkin || data?.farm?.bumpkin || {};
-      const skills = bumpkin?.skills || {};
 
-      // Проверяем наличие скиллов (значение больше 0 означает, что скилл вкачан)
+    function applySkillState(data) {
+      const skills = data?.bumpkin?.skills || {};
       const hasFeller = !!skills["Feller's Discount"];
       const hasFrugal = !!skills["Frugal Miner"];
+      const hasCheapRakes = !!skills["Cheap Rakes"];
+      
+      let hasSaltSculpture = false;
+      if (data?.sculptures && data.sculptures["Salt Sculpture"]) hasSaltSculpture = true;
+      if (data?.inventory && Number(data.inventory["Salt Sculpture"]) > 0) hasSaltSculpture = true;
+      if (data?.collectibles && data.collectibles["Salt Sculpture"]) hasSaltSculpture = true;
 
-      // Переключаем ползунки в интерфейсе
       if (els.fellerDiscount) els.fellerDiscount.checked = hasFeller;
       if (els.frugalMiner) els.frugalMiner.checked = hasFrugal;
-
-      // Выводим в консоль для проверки (нажми F12, чтобы убедиться, что всё подтянулось)
-      console.log("🛠 Загруженные скиллы:", skills);
-      console.log("🪓 Feller's Discount:", hasFeller, "| ⛏ Frugal Miner:", hasFrugal);
-
-      return { hasFeller, hasFrugal };
+      if (els.cheapRakes) els.cheapRakes.checked = hasCheapRakes;
+      if (els.saltSculpture) els.saltSculpture.checked = hasSaltSculpture;
     }
-    function applyFarmPayload(v11, land) {
-      const data = land && typeof land === 'object' ? land : {};
-      const resources = data.resources || {};
-      const map = {
-        yieldWood: resources.wood?.avg,
-        yieldStone: resources.stone?.avg,
-        yieldIron: resources.iron?.avg,
-        yieldGold: resources.gold?.avg,
-        yieldCrimstone: resources.crimstone?.avg
+
+    function coinToFlower(coins) {
+      const rate = Math.max(0.0001, num(els.coinRate.value));
+      return coins / rate;
+    }
+    function getToolBaseCoinCost(resource) {
+      if (resource === 'Wood') return 20;
+      if (resource === 'Stone') return 20;
+      if (resource === 'Iron') return 20;
+      if (resource === 'Gold') return 80;
+      if (resource === 'Crimstone') return 100;
+      if (resource === 'Salt') return 20; 
+      return 0;
+    }
+    function isToolSkillActive(resource) {
+      if (resource === 'Wood') return !!els.fellerDiscount?.checked;
+      return !!els.frugalMiner?.checked;
+    }
+    function getToolCoinCost(resource) {
+      const base = getToolBaseCoinCost(resource);
+      if (!base) return 0;
+      if (resource === 'Salt') {
+        let cost = base;
+        if (els.cheapRakes?.checked) cost *= 0.8;
+        if (els.saltSculpture?.checked) cost *= 0.9;
+        return cost;
+      }
+      return isToolSkillActive(resource) ? base * 0.8 : base;
+    }
+
+    function getChainCoinCosts() {
+      const chainCoinPart = {};
+      const woodUnitCoin = getToolCoinCost('Wood') / getYield('Wood');
+      chainCoinPart.Wood = getToolCoinCost('Wood');
+      chainCoinPart.Stone = 3 * woodUnitCoin + getToolCoinCost('Stone');
+      const stoneUnitCoin = chainCoinPart.Stone / getYield('Stone');
+      chainCoinPart.Iron = 3 * woodUnitCoin + 5 * stoneUnitCoin + getToolCoinCost('Iron');
+      const ironUnitCoin = chainCoinPart.Iron / getYield('Iron');
+      chainCoinPart.Gold = 3 * woodUnitCoin + 5 * ironUnitCoin + getToolCoinCost('Gold');
+      const goldUnitCoin = chainCoinPart.Gold / getYield('Gold');
+      chainCoinPart.Crimstone = 3 * woodUnitCoin + 3 * goldUnitCoin + getToolCoinCost('Crimstone');
+      chainCoinPart.Salt = 3 * woodUnitCoin + getToolCoinCost('Salt');
+      return chainCoinPart;
+    }
+
+    function getOptimalCosts() {
+      const directCoinPart = { Wood: getToolCoinCost('Wood'), Stone: getToolCoinCost('Stone'), Iron: getToolCoinCost('Iron'), Gold: getToolCoinCost('Gold'), Crimstone: getToolCoinCost('Crimstone'), Salt: getToolCoinCost('Salt') };
+      const chainCoinPart = getChainCoinCosts();
+      const chainCoinFlowerPart = { Wood: coinToFlower(chainCoinPart.Wood), Stone: coinToFlower(chainCoinPart.Stone), Iron: coinToFlower(chainCoinPart.Iron), Gold: coinToFlower(chainCoinPart.Gold), Crimstone: coinToFlower(chainCoinPart.Crimstone), Salt: coinToFlower(chainCoinPart.Salt) };
+      
+      const mineUnitCosts = {};
+      const toolCosts = {};
+      const sources = {};
+
+      const getIngredientCost = (res) => {
+        if (sources[res] && sources[res].key === 'buy') return getPrice(res);
+        return getEffectiveSellPrice(res);
       };
-      if (Number.isFinite(map.yieldWood)) setYieldValue('yieldWood', map.yieldWood);
-      if (Number.isFinite(map.yieldStone)) setYieldValue('yieldStone', map.yieldStone);
-      if (Number.isFinite(map.yieldIron)) setYieldValue('yieldIron', map.yieldIron);
-      if (Number.isFinite(map.yieldGold)) setYieldValue('yieldGold', map.yieldGold);
-      if (Number.isFinite(map.yieldCrimstone)) setYieldValue('yieldCrimstone', map.yieldCrimstone);
-      return map;
+
+      toolCosts.Wood = coinToFlower(directCoinPart.Wood);
+      const woodPick = pickCheaperSource(getPrice('Wood'), toolCosts.Wood / getYield('Wood'));
+      mineUnitCosts.Wood = woodPick.value; sources.Wood = woodPick;
+
+      toolCosts.Stone = 3 * getIngredientCost('Wood') + coinToFlower(directCoinPart.Stone);
+      const stonePick = pickCheaperSource(getPrice('Stone'), toolCosts.Stone / getYield('Stone'));
+      mineUnitCosts.Stone = stonePick.value; sources.Stone = stonePick;
+
+      toolCosts.Iron = 3 * getIngredientCost('Wood') + 5 * getIngredientCost('Stone') + coinToFlower(directCoinPart.Iron);
+      const ironPick = pickCheaperSource(getPrice('Iron'), toolCosts.Iron / getYield('Iron'));
+      mineUnitCosts.Iron = ironPick.value; sources.Iron = ironPick;
+
+      toolCosts.Gold = 3 * getIngredientCost('Wood') + 5 * getIngredientCost('Iron') + coinToFlower(directCoinPart.Gold);
+      const goldPick = pickCheaperSource(getPrice('Gold'), toolCosts.Gold / getYield('Gold'));
+      mineUnitCosts.Gold = goldPick.value; sources.Gold = goldPick;
+
+      toolCosts.Crimstone = 3 * getIngredientCost('Wood') + 3 * getIngredientCost('Gold') + coinToFlower(directCoinPart.Crimstone);
+      const crimPick = pickCheaperSource(getPrice('Crimstone'), toolCosts.Crimstone / getYield('Crimstone'));
+      mineUnitCosts.Crimstone = crimPick.value; sources.Crimstone = crimPick;
+
+      toolCosts.Salt = 3 * getIngredientCost('Wood') + coinToFlower(directCoinPart.Salt);
+      const saltPick = pickCheaperSource(getPrice('Salt'), toolCosts.Salt / getYield('Salt'));
+      mineUnitCosts.Salt = saltPick.value; sources.Salt = saltPick;
+
+      return { toolCosts, mineUnitCosts, sources, directCoinPart, chainCoinPart, chainCoinFlowerPart };
     }
 
-function getOptimalCosts() {
-  const directCoinPart = {
-    Wood: getToolCoinCost('Wood'),
-    Stone: getToolCoinCost('Stone'),
-    Iron: getToolCoinCost('Iron'),
-    Gold: getToolCoinCost('Gold'),
-    Crimstone: getToolCoinCost('Crimstone'),
-    Salt: getToolCoinCost('Salt') // Добавь эту строку
-  };
+    function getToolCosts(mode) {
+      if (mode === 'optimal') return getOptimalCosts();
 
-  const chainCoinPart = getChainCoinCosts();
-  const chainCoinFlowerPart = {
-    Wood: coinToFlower(chainCoinPart.Wood),
-    Stone: coinToFlower(chainCoinPart.Stone),
-    Iron: coinToFlower(chainCoinPart.Iron),
-    Gold: coinToFlower(chainCoinPart.Gold),
-    Crimstone: coinToFlower(chainCoinPart.Crimstone),
-    Salt: coinToFlower(chainCoinPart.Salt) // Добавь эту строку
-  };
+      const directCoinPart = { Wood: getToolCoinCost('Wood'), Stone: getToolCoinCost('Stone'), Iron: getToolCoinCost('Iron'), Gold: getToolCoinCost('Gold'), Crimstone: getToolCoinCost('Crimstone'), Salt: getToolCoinCost('Salt') };
+      const chainCoinPart = getChainCoinCosts();
+      const chainCoinFlowerPart = { Wood: coinToFlower(chainCoinPart.Wood), Stone: coinToFlower(chainCoinPart.Stone), Iron: coinToFlower(chainCoinPart.Iron), Gold: coinToFlower(chainCoinPart.Gold), Crimstone: coinToFlower(chainCoinPart.Crimstone), Salt: coinToFlower(chainCoinPart.Salt) };
+      const market = { Wood: getPrice('Wood'), Stone: getPrice('Stone'), Iron: getPrice('Iron'), Gold: getPrice('Gold'), Crimstone: getPrice('Crimstone'), Salt: getPrice('Salt') };
 
-  const mineUnitCosts = {};
-  const toolCosts = {};
-  const sources = {};
+      const toolCostMarket = {
+        Wood: chainCoinFlowerPart.Wood,
+        Stone: 3 * market.Wood + coinToFlower(directCoinPart.Stone),
+        Iron: 3 * market.Wood + 5 * market.Stone + coinToFlower(directCoinPart.Iron),
+        Gold: 3 * market.Wood + 5 * market.Iron + coinToFlower(directCoinPart.Gold),
+        Crimstone: 3 * market.Wood + 3 * market.Gold + coinToFlower(directCoinPart.Crimstone),
+        Salt: 3 * market.Wood + coinToFlower(directCoinPart.Salt)
+      };
 
-  // === НОВАЯ ЛОГИКА ОЦЕНКИ ИНГРЕДИЕНТА ===
-  const getIngredientCost = (res) => {
-    // Если на предыдущем этапе мы решили, что ресурс дешевле купить (источник 'buy')
-    // то для крафта мы идем на рынок и покупаем его по полной цене (без учета комиссии)
-    if (sources[res] && sources[res].key === 'buy') {
-      return getPrice(res);
+      if (mode === 'market') return { toolCosts: toolCostMarket, mineUnitCosts: null, directCoinPart, chainCoinPart, chainCoinFlowerPart };
+
+      const mineUnitCosts = {}; const toolCosts = {};
+      toolCosts.Wood = coinToFlower(directCoinPart.Wood); mineUnitCosts.Wood = toolCosts.Wood / getYield('Wood');
+      toolCosts.Stone = 3 * mineUnitCosts.Wood + coinToFlower(directCoinPart.Stone); mineUnitCosts.Stone = toolCosts.Stone / getYield('Stone');
+      toolCosts.Iron = 3 * mineUnitCosts.Wood + 5 * mineUnitCosts.Stone + coinToFlower(directCoinPart.Iron); mineUnitCosts.Iron = toolCosts.Iron / getYield('Iron');
+      toolCosts.Gold = 3 * mineUnitCosts.Wood + 5 * mineUnitCosts.Iron + coinToFlower(directCoinPart.Gold); mineUnitCosts.Gold = toolCosts.Gold / getYield('Gold');
+      toolCosts.Crimstone = 3 * mineUnitCosts.Wood + 3 * mineUnitCosts.Gold + coinToFlower(directCoinPart.Crimstone); mineUnitCosts.Crimstone = toolCosts.Crimstone / getYield('Crimstone');
+      toolCosts.Salt = 3 * mineUnitCosts.Wood + coinToFlower(directCoinPart.Salt); mineUnitCosts.Salt = toolCosts.Salt / getYield('Salt');
+
+      return { toolCosts, mineUnitCosts, directCoinPart, chainCoinPart, chainCoinFlowerPart };
     }
-    // Если мы решили его добывать, то стоимость его использования в крафте =
-    // деньги, которые мы потеряли, отказавшись от его продажи (цена покупки минус комиссия)
-    return getEffectiveSellPrice(res);
-  };
 
-  // 1. WOOD
-  toolCosts.Wood = coinToFlower(directCoinPart.Wood);
-  const woodPick = pickCheaperSource(getPrice('Wood'), toolCosts.Wood / getYield('Wood'));
-  mineUnitCosts.Wood = woodPick.value;
-  sources.Wood = woodPick;
-
-  // 2. STONE 
-  toolCosts.Stone = 3 * getIngredientCost('Wood') + coinToFlower(directCoinPart.Stone);
-  const stonePick = pickCheaperSource(getPrice('Stone'), toolCosts.Stone / getYield('Stone'));
-  mineUnitCosts.Stone = stonePick.value;
-  sources.Stone = stonePick;
-
-  // 3. IRON 
-  toolCosts.Iron = 3 * getIngredientCost('Wood') + 5 * getIngredientCost('Stone') + coinToFlower(directCoinPart.Iron);
-  const ironPick = pickCheaperSource(getPrice('Iron'), toolCosts.Iron / getYield('Iron'));
-  mineUnitCosts.Iron = ironPick.value;
-  sources.Iron = ironPick;
-
-  // 4. GOLD 
-  toolCosts.Gold = 3 * getIngredientCost('Wood') + 5 * getIngredientCost('Iron') + coinToFlower(directCoinPart.Gold);
-  const goldPick = pickCheaperSource(getPrice('Gold'), toolCosts.Gold / getYield('Gold'));
-  mineUnitCosts.Gold = goldPick.value;
-  sources.Gold = goldPick;
-
-  // 5. CRIMSTONE 
-  toolCosts.Crimstone = 3 * getIngredientCost('Wood') + 3 * getIngredientCost('Gold') + coinToFlower(directCoinPart.Crimstone);
-  const crimPick = pickCheaperSource(getPrice('Crimstone'), toolCosts.Crimstone / getYield('Crimstone'));
-  mineUnitCosts.Crimstone = crimPick.value;
-  sources.Crimstone = crimPick;
-
-  // 6. SALT
-  toolCosts.Salt = 3 * getIngredientCost('Wood') + coinToFlower(directCoinPart.Salt);
-  const saltPick = pickCheaperSource(getPrice('Salt'), toolCosts.Salt / getYield('Salt'));
-  mineUnitCosts.Salt = saltPick.value;
-  sources.Salt = saltPick;
-
-  return { toolCosts, mineUnitCosts, sources, directCoinPart, chainCoinPart, chainCoinFlowerPart };
-}
     function getUnitCostClass(unitCost, marketPrice) {
       if (!Number.isFinite(unitCost) || !Number.isFinite(marketPrice)) return '';
       if (unitCost < marketPrice - 1e-9) return 'good';
       if (unitCost > marketPrice + 1e-9) return 'bad';
       return 'warn';
     }
-    function getSaleAdviceDisplay(roleInChain) {
-      return SALE_TOOLTIPS[roleInChain] || { short: roleInChain, summary: roleInChain, sale: null, self: null };
-    }
-    function buildSaleAdviceTooltip(roleInChain) {
-      const t = getSaleAdviceDisplay(roleInChain);
-      let html = `<div class="tooltip-heading">Совет</div><strong>Итог:</strong> ${t.summary}`;
-      if (t.sale) html += `<br><strong>Продажа:</strong> ${t.sale}`;
-      if (t.self) html += `<br><strong>Для себя:</strong> ${t.self}`;
-      return html;
-    }
-    function coinToFlower(coins) {
-      const rate = Math.max(0.0001, num(els.coinRate.value));
-      return coins / rate;
-    }
-function getToolBaseCoinCost(resource) {
-  if (resource === 'Wood') return 20;
-  if (resource === 'Stone') return 20;
-  if (resource === 'Iron') return 20;
-  if (resource === 'Gold') return 80;
-  if (resource === 'Crimstone') return 100;
-  if (resource === 'Salt') return 20; // Базовая цена граблей добавлено 31.05.26
-  return 0;
-}
 
-function isToolSkillActive(resource) {
-  if (resource === 'Wood') return !!els.fellerDiscount?.checked;
-  return !!els.frugalMiner?.checked;
-}
-
-function getToolCoinCost(resource) {
-  const base = getToolBaseCoinCost(resource);
-  if (!base) return 0;
-
-  if (resource === 'Salt') {
-    // Применяем скидки: -20% (0.8) и -10% (0.9) мультипликативно
-    // Если оба активны: 20 * 0.8 * 0.9 = 14.4
-    let cost = base;
-    if (els.cheapRakes.checked) cost *= 0.8;
-    if (els.saltSculpture.checked) cost *= 0.9;
-    return cost;
-  }
-  
-  return isToolSkillActive(resource) ? base * 0.8 : base;
-}
-
-function getToolCosts(mode) {
-  if (mode === 'optimal') return getOptimalCosts();
-
-  const directCoinPart = {
-    Wood: getToolCoinCost('Wood'),
-    Stone: getToolCoinCost('Stone'),
-    Iron: getToolCoinCost('Iron'),
-    Gold: getToolCoinCost('Gold'),
-    Crimstone: getToolCoinCost('Crimstone'),
-    Salt: getToolCoinCost('Salt') // Добавь эту строку
-  };
-
-  const chainCoinPart = getChainCoinCosts();
-  const chainCoinFlowerPart = {
-    Wood: coinToFlower(chainCoinPart.Wood),
-    Stone: coinToFlower(chainCoinPart.Stone),
-    Iron: coinToFlower(chainCoinPart.Iron),
-    Gold: coinToFlower(chainCoinPart.Gold),
-    Crimstone: coinToFlower(chainCoinPart.Crimstone),
-    Salt: coinToFlower(chainCoinPart.Salt) // Добавь эту строку
-  };
-
-  const market = {
-    Wood: getPrice('Wood'),
-    Stone: getPrice('Stone'),
-    Iron: getPrice('Iron'),
-    Gold: getPrice('Gold'),
-    Crimstone: getPrice('Crimstone'),
-    Salt: getPrice('Salt') // Добавь эту строку
-  };
-
-  const toolCostMarket = {
-    Wood: chainCoinFlowerPart.Wood,
-    Stone: 3 * market.Wood + coinToFlower(directCoinPart.Stone),
-    Iron: 3 * market.Wood + 5 * market.Stone + coinToFlower(directCoinPart.Iron),
-    Gold: 3 * market.Wood + 5 * market.Iron + coinToFlower(directCoinPart.Gold),
-    Crimstone: 3 * market.Wood + 3 * market.Gold + coinToFlower(directCoinPart.Crimstone),
-    Salt: 3 * market.Wood + coinToFlower(directCoinPart.Salt) // Добавь эту строку
-  };
-
-  if (mode === 'market') {
-    return { toolCosts: toolCostMarket, mineUnitCosts: null, directCoinPart, chainCoinPart, chainCoinFlowerPart };
-  }
-
-  const mineUnitCosts = {};
-  const toolCosts = {};
-
-  toolCosts.Wood = coinToFlower(directCoinPart.Wood);
-  mineUnitCosts.Wood = toolCosts.Wood / getYield('Wood');
-
-  toolCosts.Stone = 3 * mineUnitCosts.Wood + coinToFlower(directCoinPart.Stone);
-  mineUnitCosts.Stone = toolCosts.Stone / getYield('Stone');
-
-  toolCosts.Iron = 3 * mineUnitCosts.Wood + 5 * mineUnitCosts.Stone + coinToFlower(directCoinPart.Iron);
-  mineUnitCosts.Iron = toolCosts.Iron / getYield('Iron');
-
-  toolCosts.Gold = 3 * mineUnitCosts.Wood + 5 * mineUnitCosts.Iron + coinToFlower(directCoinPart.Gold);
-  mineUnitCosts.Gold = toolCosts.Gold / getYield('Gold');
-
-  toolCosts.Crimstone = 3 * mineUnitCosts.Wood + 3 * mineUnitCosts.Gold + coinToFlower(directCoinPart.Crimstone);
-  mineUnitCosts.Crimstone = toolCosts.Crimstone / getYield('Crimstone');
-
-  toolCosts.Salt = 3 * mineUnitCosts.Wood + coinToFlower(directCoinPart.Salt);
-  mineUnitCosts.Salt = toolCosts.Salt / getYield('Salt');
-
-  return { toolCosts, mineUnitCosts, directCoinPart, chainCoinPart, chainCoinFlowerPart };
-}
-
-const TOOL_COIN = { Wood: 20, Stone: 20, Iron: 20, Gold: 80, Crimstone: 100 };
-
-function coinFlowerExprCoins(coins) {
-  return `${fmt(coins, 6)} / coinRate`;
-}
-
-function describeToolExpression(resource, mode, costs) {
-  const { sources, mineUnitCosts } = costs;
-
-  if (mode === 'optimal') {
-    const src = (r) => sources[r]?.label || '—';
-    
-    // Динамический тултип для стоимости ингредиента
-    const ingrCost = (r) => {
-      if (sources[r] && sources[r].key === 'buy') {
-         return `${fmt(getPrice(r), 6)} (покупка)`; // Если покупаем с рынка
+    function coinFlowerExprCoins(coins) { return `${fmt(coins, 6)} / coinRate`; }
+    function describeToolExpression(resource, mode, costs) {
+      const { sources, mineUnitCosts } = costs;
+      if (mode === 'optimal') {
+        const src = (r) => sources[r]?.label || '—';
+        const ingrCost = (r) => sources[r]?.key === 'buy' ? `${fmt(getPrice(r), 6)} (покупка)` : `${fmt(getEffectiveSellPrice(r), 6)} (упущ. выгода)`;
+        if (resource === 'Wood') return `${coinFlowerExprCoins(getToolCoinCost('Wood'))} / ${fmt(getYield('Wood'), 6)} <span class="muted">(${src('Wood')})</span>`;
+        const map = {
+          Stone: `3×${ingrCost('Wood')} + ${coinFlowerExprCoins(getToolCoinCost('Stone'))}`,
+          Iron: `3×${ingrCost('Wood')} + 5×${ingrCost('Stone')} + ${coinFlowerExprCoins(getToolCoinCost('Iron'))}`,
+          Gold: `3×${ingrCost('Wood')} + 5×${ingrCost('Iron')} + ${coinFlowerExprCoins(getToolCoinCost('Gold'))}`,
+          Crimstone: `3×${ingrCost('Wood')} + 3×${ingrCost('Gold')} + ${coinFlowerExprCoins(getToolCoinCost('Crimstone'))}`,
+          Salt: `3×${ingrCost('Wood')} + ${coinFlowerExprCoins(getToolCoinCost('Salt'))}`
+        };
+        return map[resource];
       }
-      return `${fmt(getEffectiveSellPrice(r), 6)} (упущ. выгода)`; // Если фармим сами
-    };
-
-    if (resource === 'Wood') {
-      return `${coinFlowerExprCoins(getToolCoinCost('Wood'))} / ${fmt(getYield('Wood'), 6)} <span class="muted">(${src('Wood')})</span>`;
+      if (resource === 'Wood') return `${coinFlowerExprCoins(getToolCoinCost('Wood'))} <span class="muted">(COIN→FLOWER)</span>`;
+      const coinPart = (r) => coinFlowerExprCoins(getToolCoinCost(r));
+      if (mode === 'market') {
+        const p = (r) => `цена ${r}`;
+        const map = {
+          Stone: `3×${p('Wood')} + ${coinPart('Stone')}`,
+          Iron: `3×${p('Wood')} + 5×${p('Stone')} + ${coinPart('Iron')}`,
+          Gold: `3×${p('Wood')} + 5×${p('Iron')} + ${coinPart('Gold')}`,
+          Crimstone: `3×${p('Wood')} + 3×${p('Gold')} + ${coinPart('Crimstone')}`,
+          Salt: `3×${p('Wood')} + ${coinPart('Salt')}`
+        };
+        return map[resource];
+      }
+      const m = (r) => `M_${r} <span class="muted">(${fmt(costs.mineUnitCosts[r], 6)})</span>`;
+      const map = {
+        Stone: `3×${m('Wood')} + ${coinPart('Stone')}`,
+        Iron: `3×${m('Wood')} + 5×${m('Stone')} + ${coinPart('Iron')}`,
+        Gold: `3×${m('Wood')} + 5×${m('Iron')} + ${coinPart('Gold')}`,
+        Crimstone: `3×${m('Wood')} + 3×${m('Gold')} + ${coinPart('Crimstone')}`,
+        Salt: `3×${m('Wood')} + ${coinPart('Salt')}`
+      };
+      return map[resource];
     }
-
-    const map = {
-      Stone: `3×${ingrCost('Wood')} + ${coinFlowerExprCoins(getToolCoinCost('Stone'))}`,
-      Iron: `3×${ingrCost('Wood')} + 5×${ingrCost('Stone')} + ${coinFlowerExprCoins(getToolCoinCost('Iron'))}`,
-      Gold: `3×${ingrCost('Wood')} + 5×${ingrCost('Iron')} + ${coinFlowerExprCoins(getToolCoinCost('Gold'))}`,
-      Crimstone: `3×${ingrCost('Wood')} + 3×${ingrCost('Gold')} + ${coinFlowerExprCoins(getToolCoinCost('Crimstone'))}`,
-      Salt: `3×${ingrCost('Wood')} + ${coinFlowerExprCoins(getToolCoinCost('Salt'))}`
-    };
-    return map[resource];
-  }
-
-  if (resource === 'Wood') {
-    return `${coinFlowerExprCoins(getToolCoinCost('Wood'))} <span class="muted">(COIN→FLOWER)</span>`;
-  }
-
-  const coinPart = (r) => coinFlowerExprCoins(getToolCoinCost(r));
-
-  if (mode === 'market') {
-    const p = (r) => `цена ${r}`;
-    const map = {
-      Stone: `3×${p('Wood')} + ${coinPart('Stone')}`,
-      Iron: `3×${p('Wood')} + 5×${p('Stone')} + ${coinPart('Iron')}`,
-      Gold: `3×${p('Wood')} + 5×${p('Iron')} + ${coinPart('Gold')}`,
-      Crimstone: `3×${p('Wood')} + 3×${p('Gold')} + ${coinPart('Crimstone')}`,
-      Salt: `3×${p('Wood')} + ${coinPart('Salt')}` // <-- Добавлено 31.05.26
-    };
-    return map[resource];
-  }
-
-  const m = (r) => `M_${r} <span class="muted">(${fmt(costs.mineUnitCosts[r], 6)})</span>`;
-  const map = {
-    Stone: `3×${m('Wood')} + ${coinPart('Stone')}`,
-    Iron: `3×${m('Wood')} + 5×${m('Stone')} + ${coinPart('Iron')}`,
-    Gold: `3×${m('Wood')} + 5×${m('Iron')} + ${coinPart('Gold')}`,
-    Crimstone: `3×${m('Wood')} + 3×${m('Gold')} + ${coinPart('Crimstone')}`,
-    Salt: `3×${m('Wood')} + ${coinPart('Salt')}` // <-- Добавлено 31.05.26
-  };
-  return map[resource];
-}
-
-function buildChainFormula(resource) {
-  const c = getChainCoinCosts();
-  const y = (r) => fmt(getYield(r), 6);
-  const map = {
-    Wood: `${fmt(getToolCoinCost('Wood'), 6)} COIN`,
-    Stone: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + ${fmt(getToolCoinCost('Stone'), 6)} = ${fmt(c.Stone, 6)} COIN`,
-    Iron: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + 5×(${fmt(c.Stone, 6)} / ${y('Stone')}) + ${fmt(getToolCoinCost('Iron'), 6)} = ${fmt(c.Iron, 6)} COIN`,
-    Gold: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + 5×(${fmt(c.Iron, 6)} / ${y('Iron')}) + ${fmt(getToolCoinCost('Gold'), 6)} = ${fmt(c.Gold, 6)} COIN`,
-    Crimstone: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + 3×(${fmt(c.Gold, 6)} / ${y('Gold')}) + ${fmt(getToolCoinCost('Crimstone'), 6)} = ${fmt(c.Crimstone, 6)} COIN`,
-    Salt: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + ${fmt(getToolCoinCost('Salt'), 6)} = ${fmt(c.Salt, 6)} COIN`
-  };
-  return map[resource];
-}
+    function buildChainFormula(resource) {
+      const c = getChainCoinCosts(); const y = (r) => fmt(getYield(r), 6);
+      const map = {
+        Wood: `${fmt(getToolCoinCost('Wood'), 6)} COIN`,
+        Stone: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + ${fmt(getToolCoinCost('Stone'), 6)} = ${fmt(c.Stone, 6)} COIN`,
+        Iron: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + 5×(${fmt(c.Stone, 6)} / ${y('Stone')}) + ${fmt(getToolCoinCost('Iron'), 6)} = ${fmt(c.Iron, 6)} COIN`,
+        Gold: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + 5×(${fmt(c.Iron, 6)} / ${y('Iron')}) + ${fmt(getToolCoinCost('Gold'), 6)} = ${fmt(c.Gold, 6)} COIN`,
+        Crimstone: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + 3×(${fmt(c.Gold, 6)} / ${y('Gold')}) + ${fmt(getToolCoinCost('Crimstone'), 6)} = ${fmt(c.Crimstone, 6)} COIN`,
+        Salt: `3×(${fmt(getToolCoinCost('Wood'), 6)} / ${y('Wood')}) + ${fmt(getToolCoinCost('Salt'), 6)} = ${fmt(c.Salt, 6)} COIN`
+      };
+      return map[resource];
+    }
     function buildFormula(resource, basisMode, kind = 'unit') {
       const costs = getToolCosts(basisMode);
       const y = getYield(resource);
@@ -747,247 +641,141 @@ function buildChainFormula(resource) {
       const toolExpr = describeToolExpression(resource, basisMode, costs);
       const mainExpr = kind === 'tool' ? toolExpr : `(${toolExpr}) / ${fmt(y, 6)}`;
       const heading = kind === 'tool' ? '<div class="tooltip-heading">Стоимость инструмента (FLOWER)</div>' : '<div class="tooltip-heading">Себестоимость 1 ед. ресурса (FLOWER)</div>';
-      let html = `${heading}<span class="muted">${modeLabel}</span><br>${mainExpr}<br><span class="muted">= ${fmt(shown, 6)} FLOWER (как в таблице)</span>`;
+      let html = `${heading}<span class="muted">${modeLabel}</span><br>${mainExpr}<br><span class="muted">= ${fmt(shown, 6)} FLOWER</span>`;
       if (basisMode === 'optimal' && costs.sources) {
         const plan = RESOURCE_ORDER.map((r) => `${r}: ${costs.sources[r]?.label || '—'}`).join(' · ');
-        html += `<br><span class="muted">План цепочки: ${plan}</span>`;
+        html += `<br><span class="muted">План: ${plan}</span>`;
       } else {
-        html += `<br><span class="muted">COIN‑цепочка (по вашему дропу): ${buildChainFormula(resource)}</span>`;
+        html += `<br><span class="muted">COIN‑цепочка: ${buildChainFormula(resource)}</span>`;
       }
       return html;
     }
-function buildOptimalPlanTooltip(costs, currentResource) {
-  if (!costs.sources) return '';
+    function buildOptimalPlanTooltip(costs, currentResource) {
+      if (!costs.sources) return '';
+      const chainMap = { Wood: ['Wood'], Stone: ['Wood', 'Stone'], Iron: ['Wood', 'Stone', 'Iron'], Gold: ['Wood', 'Iron', 'Gold'], Crimstone: ['Wood', 'Gold', 'Crimstone'], Salt: ['Wood', 'Salt'] };
+      const req = chainMap[currentResource] || [currentResource];
+      const lines = req.map((r) => {
+        const src = costs.sources[r];
+        const isTarget = r === currentResource;
+        const colorClass = src?.key === 'buy' ? 'warn' : 'good';
+        const prefix = isTarget ? `▶ <strong>${r}</strong>` : `<span class="muted">${r}</span>`;
+        return `${prefix}: <span class="${colorClass}">${src?.label || '—'}</span>`;
+      });
+      return `<div class="tooltip-heading">План для ${currentResource}</div>${lines.join('<br>')}`;
+    }
+    function buildAcquisitionTooltip(resource, mode, marketPrice, craftCost) {
+      const modeName = mode === 'market' ? 'Рыночная база' : mode === 'self' ? 'Своя добыча' : 'Оптимальная цепочка';
+      let html = `<div class="tooltip-heading">Способ получения (${modeName})</div>• <b>Купить:</b> ${fmt(marketPrice, 6)} FLOWER<br>`;
+      if (mode === 'market') { html += `• <b>Скрафтить по рынку:</b> ${fmt(craftCost, 6)} FLOWER<br>`; }
+      else if (mode === 'self') { html += `• <b>Добыть:</b> ${fmt(craftCost, 6)} FLOWER<br>`; }
+      else if (mode === 'optimal') { html += `• <b>Скрафтить по цепочке:</b> ${fmt(craftCost, 6)} FLOWER<br>`; }
+      return html;
+    }
 
-  // Карта зависимостей: какие ресурсы нужны для цепочки текущего инструмента
-  const chainMap = {
-    Wood: ['Wood'],
-    Stone: ['Wood', 'Stone'],
-    Iron: ['Wood', 'Stone', 'Iron'],
-    Gold: ['Wood', 'Iron', 'Gold'],
-    Crimstone: ['Wood', 'Gold', 'Crimstone'],
-    Salt: ['Wood', 'Salt']
-  };
-
-  const requiredResources = chainMap[currentResource] || [currentResource];
-
-  const lines = requiredResources.map((r) => {
-    const src = costs.sources[r];
-    const isTarget = r === currentResource;
-    
-    // Красим "Добывать" в зеленый, "Купить" в желтый (или оранжевый)
-    const colorClass = src?.key === 'buy' ? 'warn' : 'good';
-    
-    // Выделяем целевой ресурс стрелочкой, а предыдущие ингредиенты делаем приглушенными
-    const prefix = isTarget ? `▶ <strong>${r}</strong>` : `<span class="muted">${r}</span>`;
-    
-    return `${prefix}: <span class="${colorClass}">${src?.label || '—'}</span>`;
-  });
-
-  return `<div class="tooltip-heading">План для ${currentResource}</div>${lines.join('<br>')}`;
-}
-function buildAcquisitionTooltip(resource, mode, marketPrice, craftCost) {
-  const modeName = mode === 'market' ? 'Рыночная база' : mode === 'self' ? 'Своя добыча' : 'Оптимальная цепочка';
-  let html = `<div class="tooltip-heading">Способ получения (${modeName})</div>`;
-  html += `• <b>Купить готовое:</b> ${fmt(marketPrice, 6)} FLOWER<br>`;
-  
-  if (mode === 'market') {
-    html += `• <b>Скрафтить (сырье с рынка):</b> ${fmt(craftCost, 6)} FLOWER<br>`;
-    html += `<br><span class="muted">ℹ️ Сравнивает покупку готового ресурса с покупкой сырья для его крафта.</span>`;
-  } else if (mode === 'self') {
-    html += `• <b>Добыть вручную:</b> ${fmt(craftCost, 6)} FLOWER<br>`;
-    html += `<br><span class="muted">ℹ️ Сравнивает покупку готового ресурса с затратами на его ручной крафт в идеальных условиях.</span>`;
-  } else if (mode === 'optimal') {
-    html += `• <b>Скрафтить по цепочке:</b> ${fmt(craftCost, 6)} FLOWER<br>`;
-    html += `<br><span class="muted">ℹ️ Сравнивает покупку готового ресурса с крафтом, где каждый ингредиент цепочки был добыт или куплен максимально выгодно.</span>`;
-  }
-  return html;
-}
     function recalc() {
-  const useOptimal = !!els.optimalChain?.checked;
-  const mode = els.costMode.value;
-  const basisMode = useOptimal ? 'optimal' : mode;
-  document.body.classList.toggle('optimal-chain-on', useOptimal);
-  if (els.costModeRow) els.costModeRow.classList.toggle('cost-mode-disabled', useOptimal);
-  if (els.unitCostModeHint) els.unitCostModeHint.textContent = useOptimal ? 'оптимальная цепочка' : getCostModeHint(mode);
+      const useOptimal = !!els.optimalChain?.checked;
+      const mode = els.costMode.value;
+      const basisMode = useOptimal ? 'optimal' : mode;
+      document.body.classList.toggle('optimal-chain-on', useOptimal);
+      if (els.costModeRow) els.costModeRow.classList.toggle('cost-mode-disabled', useOptimal);
+      if (els.unitCostModeHint) els.unitCostModeHint.textContent = useOptimal ? 'оптимальная цепочка' : getCostModeHint(mode);
 
-  const marketCostsData = getToolCosts('market');
-  const selfCostsData = getToolCosts('self');
-  const activeCostsData = getToolCosts(basisMode);
+      const marketCostsData = getToolCosts('market');
+      const selfCostsData = getToolCosts('self');
+      const activeCostsData = getToolCosts(basisMode);
 
-  const { toolCosts, mineUnitCosts } = activeCostsData;
-  const optimalSources = activeCostsData.sources || null;
-  const rows = [];
-  let profitableCount = 0;
-  let buyCount = 0;
-  let best = { resource: null, profit: -Infinity };
+      const { toolCosts, mineUnitCosts } = activeCostsData;
+      const optimalSources = activeCostsData.sources || null;
+      const rows = [];
+      let profitableCount = 0; let buyCount = 0;
+      let best = { resource: null, profit: -Infinity };
 
-  for (const resource of RESOURCE_ORDER) {
-    const marketPrice = getPrice(resource);
-    const effectiveSellPrice = getEffectiveSellPrice(resource);
-    const yieldValue = getYield(resource);
+      for (const resource of RESOURCE_ORDER) {
+        const marketPrice = getPrice(resource);
+        const effectiveSellPrice = getEffectiveSellPrice(resource);
+        const yieldValue = getYield(resource);
 
-    const marketUnitCost = marketCostsData.toolCosts[resource] / yieldValue;
-    const unitTooltipHtml = buildFormula(resource, basisMode, 'unit');
-    const toolTooltipHtml = buildFormula(resource, basisMode, 'tool');
-    const selfUnitCost = selfCostsData.mineUnitCosts[resource];
-    const unitCost = basisMode === 'market' ? marketUnitCost : mineUnitCosts[resource];
-    const optimalSource = optimalSources?.[resource];
+        const marketUnitCost = marketCostsData.toolCosts[resource] / yieldValue;
+        const unitTooltipHtml = buildFormula(resource, basisMode, 'unit');
+        const toolTooltipHtml = buildFormula(resource, basisMode, 'tool');
+        const selfUnitCost = selfCostsData.mineUnitCosts[resource];
+        const unitCost = basisMode === 'market' ? marketUnitCost : mineUnitCosts[resource];
+        const optimalSource = optimalSources?.[resource];
+        const optimalPlanTooltipHtml = useOptimal ? buildOptimalPlanTooltip(activeCostsData, resource) : '';
 
-    const optimalPlanTooltipHtml = useOptimal ? buildOptimalPlanTooltip(activeCostsData, resource) : '';
-
-    // --- НОВАЯ ЛОГИКА ДЛЯ КОЛОНКИ "ЛУЧШИЙ СПОСОБ ПОЛУЧИТЬ" ---
-    const optimalCraftCost = activeCostsData.toolCosts[resource] / yieldValue;
-    const craftCost = basisMode === 'market' ? marketUnitCost : basisMode === 'self' ? selfUnitCost : optimalCraftCost;
-    
-    const acquisitionTooltipHtml = buildAcquisitionTooltip(resource, basisMode, marketPrice, craftCost);
-    const acquisitionOptions = [ { label: 'Купить', value: marketPrice } ];
-    
-    if (basisMode === 'market' && Number.isFinite(craftCost)) {
-      acquisitionOptions.push({ label: 'Скрафтить по рынку', value: craftCost });
-    } else if (basisMode === 'self' && Number.isFinite(craftCost)) {
-      acquisitionOptions.push({ label: 'Добыть вручную', value: craftCost });
-    } else if (basisMode === 'optimal' && Number.isFinite(craftCost)) {
-      acquisitionOptions.push({ label: 'Скрафтить по цепочке', value: craftCost });
-    }
-
-    const validOptions = acquisitionOptions.filter(option => Number.isFinite(option.value));
-    const bestAcquisitionCost = validOptions.length ? Math.min(...validOptions.map(option => option.value)) : NaN;
-    const bestAcquisitionWinners = validOptions.filter(option => Math.abs(option.value - bestAcquisitionCost) < 1e-12);
-    const bestAcquisitionMethod = !validOptions.length ? '—' : bestAcquisitionWinners.length > 1 ? 'Одинаково' : bestAcquisitionWinners[0].label;
-    
-    const acqClass = bestAcquisitionMethod === 'Купить' ? 'bad' : bestAcquisitionMethod === 'Скрафтить по рынку' ? 'warn' : (bestAcquisitionMethod === 'Добыть вручную' || bestAcquisitionMethod === 'Скрафтить по цепочке') ? 'good' : '';
-    // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
-
-    const profitPerUnit = effectiveSellPrice - unitCost;
-    const profitPerTool = profitPerUnit * yieldValue;
-    const roi = unitCost > 0 ? (profitPerUnit / unitCost) * 100 : NaN;
-
-    if (Number.isFinite(profitPerUnit) && profitPerUnit > best.profit) {
-      best = { resource, profit: profitPerUnit };
-    }
-
-    let oppLossDisplay = '—';
-    let customAdviceShort = '—';
-    let customAdviceClass = '—';
-    let customAdviceTooltip = '';
-
-    if (Number.isFinite(unitCost)) {
-      const opportunityLoss = unitCost - effectiveSellPrice;
-      
-      if (unitCost < effectiveSellPrice) {
-        profitableCount++; // увеличиваем счетчик KPI
-        customAdviceShort = `Делать и продавать`;
-        customAdviceClass = `good`;
-        customAdviceTooltip = `<div class="tooltip-heading">Всё отлично ✅</div>Производить этот ресурс выгодно как для крафта, так и для продажи на рынке. Вы получаете чистую прибыль.`;
+        const optimalCraftCost = activeCostsData.toolCosts[resource] / yieldValue;
+        const craftCost = basisMode === 'market' ? marketUnitCost : basisMode === 'self' ? selfUnitCost : optimalCraftCost;
         
-        oppLossDisplay = `
-          <span class="good tooltip-trigger" tabindex="0">
-            Нет
-            <template class="tooltip-source">
-              <div class="tooltip-heading">Нет потерь</div>
-              Добыча этого ресурса выгоднее покупки. Упущенной выгоды нет!
-            </template>
-          </span>`;
-          
-      } else if (unitCost >= effectiveSellPrice && unitCost < marketPrice) {
-        customAdviceShort = `Для себя: Крафт<br><span class="bad" style="font-size:11px;">Рынок: Сбыт сырья</span>`;
-        customAdviceClass = `warn`; 
-        customAdviceTooltip = `<div class="tooltip-heading">Внимание ⚠️</div>Крафт на продажу убыточен (рынок оценивает сырье дороже готового ресурса).<br><br><b>Оставьте для себя</b> (это дешевле покупки), но не продавайте.`;
+        const acquisitionTooltipHtml = buildAcquisitionTooltip(resource, basisMode, marketPrice, craftCost);
+        const acquisitionOptions = [ { label: 'Купить', value: marketPrice } ];
         
-        oppLossDisplay = `
-          <span class="bad tooltip-trigger" tabindex="0">
-            -${fmt(opportunityLoss, 6)}
-            <template class="tooltip-source">
-              <div class="tooltip-heading">Упущенная выгода!</div>
-              С каждой проданной единицы вы теряете <b>${fmt(opportunityLoss, 6)} FLOWER</b> по сравнению с продажей сырья. Не продавайте этот ресурс!
-            </template>
-          </span>`;
-          
-      } else if (unitCost >= marketPrice) {
-        buyCount++; // увеличиваем счетчик KPI
-        customAdviceShort = `Для себя: Купить<br><span class="bad" style="font-size:11px;">Рынок: Сбыт сырья</span>`;
-        customAdviceClass = `bad`;
-        customAdviceTooltip = `<div class="tooltip-heading">Полный убыток 🛑</div>Ресурс на рынке стоит дешевле, чем сырье для него.<br><br>Нужен ресурс — купите. Нужны деньги — продайте сырье.`;
-        
-        oppLossDisplay = `
-          <span class="bad tooltip-trigger" tabindex="0">
-            -${fmt(opportunityLoss, 6)}
-            <template class="tooltip-source">
-              <div class="tooltip-heading">Упущенная выгода!</div>
-              Крафтить убыточно даже для себя. Покупка готового ресурса обойдется дешевле.
-            </template>
-          </span>`;
+        if (basisMode === 'market' && Number.isFinite(craftCost)) acquisitionOptions.push({ label: 'Скрафтить по рынку', value: craftCost });
+        else if (basisMode === 'self' && Number.isFinite(craftCost)) acquisitionOptions.push({ label: 'Добыть вручную', value: craftCost });
+        else if (basisMode === 'optimal' && Number.isFinite(craftCost)) acquisitionOptions.push({ label: 'Скрафтить по цепочке', value: craftCost });
+
+        const validOptions = acquisitionOptions.filter(o => Number.isFinite(o.value));
+        const bestAcqCost = validOptions.length ? Math.min(...validOptions.map(o => o.value)) : NaN;
+        const bestAcqWinners = validOptions.filter(o => Math.abs(o.value - bestAcqCost) < 1e-12);
+        const bestAcqMethod = !validOptions.length ? '—' : bestAcqWinners.length > 1 ? 'Одинаково' : bestAcqWinners[0].label;
+        const acqClass = bestAcqMethod === 'Купить' ? 'bad' : bestAcqMethod === 'Скрафтить по рынку' ? 'warn' : (bestAcqMethod === 'Добыть вручную' || bestAcqMethod === 'Скрафтить по цепочке') ? 'good' : '';
+
+        const profitPerUnit = effectiveSellPrice - unitCost;
+        const profitPerTool = profitPerUnit * yieldValue;
+        const roi = unitCost > 0 ? (profitPerUnit / unitCost) * 100 : NaN;
+
+        if (Number.isFinite(profitPerUnit) && profitPerUnit > best.profit) best = { resource, profit: profitPerUnit };
+
+        let oppLossDisplay = '—', customAdviceShort = '—', customAdviceClass = '—', customAdviceTooltip = '';
+
+        if (Number.isFinite(unitCost)) {
+          const opportunityLoss = unitCost - effectiveSellPrice;
+          if (unitCost < effectiveSellPrice) {
+            profitableCount++;
+            customAdviceShort = `Делать и продавать`; customAdviceClass = `good`;
+            customAdviceTooltip = `<div class="tooltip-heading">Всё отлично ✅</div>Производить выгодно.`;
+            oppLossDisplay = `<span class="good tooltip-trigger" tabindex="0">Нет<template class="tooltip-source"><div class="tooltip-heading">Нет потерь</div>Упущенной выгоды нет!</template></span>`;
+          } else if (unitCost >= effectiveSellPrice && unitCost < marketPrice) {
+            customAdviceShort = `Для себя: Крафт<br><span class="bad" style="font-size:11px;">Рынок: Сбыт сырья</span>`; customAdviceClass = `warn`; 
+            customAdviceTooltip = `<div class="tooltip-heading">Внимание ⚠️</div>Продавать убыточно, но крафтить для себя дешевле рынка.`;
+            oppLossDisplay = `<span class="bad tooltip-trigger" tabindex="0">-${fmt(opportunityLoss, 6)}<template class="tooltip-source"><div class="tooltip-heading">Упущенная выгода!</div>Теряете <b>${fmt(opportunityLoss, 6)} FLOWER</b>.</template></span>`;
+          } else if (unitCost >= marketPrice) {
+            buyCount++;
+            customAdviceShort = `Для себя: Купить<br><span class="bad" style="font-size:11px;">Рынок: Сбыт сырья</span>`; customAdviceClass = `bad`;
+            customAdviceTooltip = `<div class="tooltip-heading">Полный убыток 🛑</div>Крафтить невыгодно.`;
+            oppLossDisplay = `<span class="bad tooltip-trigger" tabindex="0">-${fmt(opportunityLoss, 6)}<template class="tooltip-source"><div class="tooltip-heading">Упущенная выгода!</div>Дешевле купить готовое.</template></span>`;
+          }
+        }
+
+        rows.push(`
+          <tr>
+            <td><div class="cell-clamp"><strong>${resource}</strong></div></td>
+            <td class="col-mobile-hide"><div class="cell-clamp">${fmt(marketPrice, 6)}</div></td>
+            <td class="col-mobile-hide"><div class="cell-clamp">${fmt(effectiveSellPrice, 6)}</div></td>
+            <td class="col-mobile-hide ${getUnitCostClass(unitCost, marketPrice)}"><span class="tooltip-trigger" tabindex="0"><span class="cell-clamp">${fmt(unitCost, 6)}</span><template class="tooltip-source">${unitTooltipHtml}</template></span></td>
+            <td class="col-mobile-hide"><span class="tooltip-trigger" tabindex="0"><span class="cell-clamp">${fmt(toolCosts[resource], 6)}</span><template class="tooltip-source">${toolTooltipHtml}</template></span></td>
+            <td class="col-mobile-hide col-optimal ${optimalSource?.key === 'mine' ? 'good' : ''}">${useOptimal ? `<span class="tooltip-trigger" tabindex="0"><span>${optimalSource?.label || '—'}</span><template class="tooltip-source">${optimalPlanTooltipHtml}</template></span>` : '—'}</td>
+            <td class="${acqClass}"><span class="tooltip-trigger" tabindex="0"><div class="cell-clamp">${bestAcqMethod}</div><template class="tooltip-source">${acquisitionTooltipHtml}</template></span></td>
+            <td class="col-mobile-hide">${oppLossDisplay}</td>
+            <td class="col-mobile-hide ${profitPerUnit >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerUnit, 6)}</div></td>
+            <td class="col-mobile-hide ${profitPerTool >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerTool, 6)}</div></td>
+            <td class="col-mobile-hide ${roi >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${pct(roi)}</div></td>
+            <td class="${customAdviceClass}"><span class="tooltip-trigger" tabindex="0"><span>${customAdviceShort}</span><template class="tooltip-source">${customAdviceTooltip}</template></span></td>
+          </tr>
+        `);
       }
+
+      els.resultsBody.innerHTML = rows.join('');
+      els.profitableCount.textContent = String(profitableCount);
+      els.buyCount.textContent = String(buyCount);
+      els.bestProfit.textContent = Number.isFinite(best.profit) ? fmt(best.profit, 6) : '—';
+      els.bestResource.textContent = best.resource || '—';
+
+      const summary = [];
+      if (useOptimal) summary.push('Оптимальная цепочка: выбрано дешевле (см. «Откуда»).');
+      else summary.push(`Модель: ${mode === 'market' ? 'Рыночная база' : 'Собственная добыча'}.`);
+      if (Number.isFinite(best.profit)) summary.push(`Макс. профит: ${best.resource} — ${fmt(best.profit, 6)} FLOWER.`);
+      els.summaryNote.textContent = summary.join(' ');
     }
-
-    rows.push(`
-      <tr>
-        <td><div class="cell-clamp"><strong>${resource}</strong></div></td>
-        <td class="col-mobile-hide"><div class="cell-clamp">${fmt(marketPrice, 6)}</div></td>
-        <td class="col-mobile-hide"><div class="cell-clamp">${fmt(effectiveSellPrice, 6)}</div></td>
-        <td class="col-mobile-hide ${getUnitCostClass(unitCost, marketPrice)}">
-          <span class="tooltip-trigger" tabindex="0" aria-label="Формула себестоимости ${resource}">
-            <span class="cell-clamp">${fmt(unitCost, 6)}</span>
-            <template class="tooltip-source">${unitTooltipHtml}</template>
-          </span>
-        </td>
-        <td class="col-mobile-hide">
-          <span class="tooltip-trigger" tabindex="0" aria-label="Формула стоимости инструмента ${resource}">
-            <span class="cell-clamp">${fmt(toolCosts[resource], 6)}</span>
-            <template class="tooltip-source">${toolTooltipHtml}</template>
-          </span>
-        </td>
-        <td class="col-mobile-hide col-optimal ${optimalSource?.key === 'mine' ? 'good' : ''}">
-          ${useOptimal ? `<span class="tooltip-trigger" tabindex="0" aria-label="План цепочки ${resource}"><span>${optimalSource?.label || '—'}</span><template class="tooltip-source">${optimalPlanTooltipHtml}</template></span>` : '—'}
-        </td>
-        <td class="${acqClass}">
-          <span class="tooltip-trigger" tabindex="0" aria-label="Сравнение способов получения ${resource}">
-            <div class="cell-clamp">${bestAcquisitionMethod}</div>
-            <template class="tooltip-source">${acquisitionTooltipHtml}</template>
-          </span>
-        </td>
-        <td class="col-mobile-hide">${oppLossDisplay}</td>
-        <td class="col-mobile-hide ${profitPerUnit >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerUnit, 6)}</div></td>
-        <td class="col-mobile-hide ${profitPerTool >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${fmt(profitPerTool, 6)}</div></td>
-        <td class="col-mobile-hide ${roi >= 0 ? 'good' : 'bad'}"><div class="cell-clamp">${pct(roi)}</div></td>
-        <td class="${customAdviceClass}">
-          <span class="tooltip-trigger" tabindex="0" aria-label="Стратегия ${resource}">
-            <span>${customAdviceShort}</span>
-            <template class="tooltip-source">${customAdviceTooltip}</template>
-          </span>
-        </td>
-      </tr>
-    `);
-  }
-
-  els.resultsBody.innerHTML = rows.join('');
-  els.profitableCount.textContent = String(profitableCount);
-  els.buyCount.textContent = String(buyCount);
-  els.bestProfit.textContent = Number.isFinite(best.profit) ? fmt(best.profit, 6) : '—';
-  els.bestResource.textContent = best.resource || '—';
-
-  const summary = [];
-  if (useOptimal) {
-    summary.push('Оптимальная цепочка: для каждого ресурса выбрано дешевле — купить или добыть (см. колонку «Откуда»).');
-  } else {
-    const modeLabel = mode === 'market' ? 'Рыночная база' : 'Собственная добыча';
-    summary.push(`Модель себестоимости: ${modeLabel}. Цепочка по вашему среднему дропу.`);
-  }
-  if (Number.isFinite(best.profit)) {
-    summary.push(`Макс. профит на 1 ед.: ${best.resource} — ${fmt(best.profit, 6)} FLOWER.`);
-  }
-  els.summaryNote.textContent = summary.join(' ');
-
-  const usesFallback = Object.keys(marketData.p2p || {}).length === 0;
-  if (usesFallback) {
-    els.fallbackNote.style.display = 'block';
-    els.fallbackNote.textContent = `Fallback p2p snapshot: Wood ${fmt(FALLBACK_P2P.Wood, 6)}, Stone ${fmt(FALLBACK_P2P.Stone, 6)}, Iron ${fmt(FALLBACK_P2P.Iron, 6)}, Gold ${fmt(FALLBACK_P2P.Gold, 6)}, Crimstone ${fmt(FALLBACK_P2P.Crimstone, 6)}.`;
-  } else {
-    els.fallbackNote.style.display = 'none';
-    els.fallbackNote.textContent = '';
-  }
-}
 
     async function loadSflWorldPrices() {
       const res = await fetch('/proxy/sfl-prices', { headers: { Accept: 'application/json' } });
@@ -997,85 +785,64 @@ function buildAcquisitionTooltip(resource, mode, marketPrice, craftCost) {
       marketData.updatedAt = json?.updatedAt || null;
       marketData.updated_text = json?.updated_text || null;
     }
+    
     async function loadPrices() {
       els.apiStatus.textContent = 'Загрузка цен…';
       try { await loadSflWorldPrices(); } catch (error) { marketData.p2p = {}; }
-      const hasP2P = Object.keys(marketData.p2p).length > 0;
-      if (hasP2P) {
+      if (Object.keys(marketData.p2p).length > 0) {
         els.updatedAt.textContent = marketData.updated_text || (marketData.updatedAt ? new Date(marketData.updatedAt).toLocaleString('ru-RU') : '—');
-        els.apiStatus.textContent = 'SFL World API подключен';
+        els.apiStatus.textContent = 'Цены загружены (SFL World)';
       } else {
         els.updatedAt.textContent = FALLBACK_UPDATED_TEXT;
-        els.apiStatus.textContent = 'Live API недоступен, включён fallback';
+        els.apiStatus.textContent = 'API недоступен, fallback';
       }
       recalc();
-    }
-    async function debugPrices() {
-      try {
-        const res = await fetch('/proxy/debug-prices');
-        els.debugOut.textContent = await res.text();
-      } catch (error) {
-        els.debugOut.textContent = 'Ошибка диагностики цен: ' + error.message;
-      }
-    }
-
-    async function debugFarm() {
-      const id = String(els.landId?.value || '').trim() || '129628';
-      try {
-        const res = await fetch(`/proxy/debug-land/${encodeURIComponent(id)}`);
-        els.debugOut.textContent = await res.text();
-      } catch (error) {
-        els.debugOut.textContent = 'Ошибка диагностики фермы: ' + error.message;
-      }
-    }
-
-    async function debugBoosts() {
-      const id = String(els.landId?.value || '').trim() || '129628';
-      try {
-        const res = await fetch(`/proxy/land/${encodeURIComponent(id)}`);
-        els.debugOut.textContent = await res.text();
-      } catch (error) {
-        els.debugOut.textContent = 'Ошибка диагностики бустов: ' + error.message;
-      }
-    }
-
-    async function debugApi() {
-      return debugPrices();
     }
 
     async function loadFarm() {
       const id = String(els.landId?.value || '').trim() || '129628';
-      if (els.loadFarmBtn) els.loadFarmBtn.disabled = true;
-      if (els.loadFarmBtn) els.loadFarmBtn.textContent = 'Загрузка...';
+      els.loadFarmBtn.disabled = true;
+      els.apiStatus.textContent = 'Загрузка фермы...';
+      
       try {
-        const [v11Res, landRes] = await Promise.all([
-          fetch(`/proxy/land-v11/${encodeURIComponent(id)}`),
-          fetch(`/proxy/land/${encodeURIComponent(id)}`)
-        ]);
-        const [v11Json, landJson] = await Promise.all([
-          v11Res.json().catch(() => null),
-          landRes.json().catch(() => null)
-        ]);
-        const v11Data = v11Json?.land || v11Json?.data || v11Json || {};
-        const landData = landJson?.land || landJson?.data || landJson || {};
-        applySkillState(landData);
-        const yields = applyFarmPayload(v11Data, landData);
-        recalc();
-        if (els.summaryNote) {
-          const parts = [];
-          if (Number.isFinite(yields.yieldWood)) parts.push(`Wood ${fmt(yields.yieldWood, 2)}`);
-          if (Number.isFinite(yields.yieldStone)) parts.push(`Stone ${fmt(yields.yieldStone, 2)}`);
-          if (Number.isFinite(yields.yieldIron)) parts.push(`Iron ${fmt(yields.yieldIron, 2)}`);
-          if (Number.isFinite(yields.yieldGold)) parts.push(`Gold ${fmt(yields.yieldGold, 2)}`);
-          if (Number.isFinite(yields.yieldCrimstone)) parts.push(`Crimstone ${fmt(yields.yieldCrimstone, 2)}`);
-          const txt = parts.length ? `Ферма ${id} загружена. Средний дроп обновлён: ${parts.join(', ')}.` : `Ферма ${id} загружена, но значения дропа не найдены.`;
-          els.summaryNote.textContent = txt;
+        const res = await fetch(`/proxy/community-farm/${encodeURIComponent(id)}`);
+        if (!res.ok) throw new Error('Ошибка API: ' + res.status);
+        const json = await res.json();
+        
+        const farm = json.farm || {};
+        applySkillState(farm);
+        
+        farmAoEReference = farm.aoe || null;
+        farmNodesReference = farm;
+
+        function hasBuff(itemName) {
+          if (farm.inventory && Number(farm.inventory[itemName]) > 0) return true;
+          if (farm.collectibles && farm.collectibles[itemName]) return true;
+          if (farm.home?.collectibles && farm.home.collectibles[itemName]) return true;
+          if (farm.bumpkin?.skills && farm.bumpkin.skills[itemName]) return true;
+          if (farm.bumpkin?.equipped && Object.values(farm.bumpkin.equipped).includes(itemName)) return true;
+          if (farm.farmHands?.bumpkins) {
+            for (let handId in farm.farmHands.bumpkins) {
+              let handEquipped = farm.farmHands.bumpkins[handId].equipped;
+              if (handEquipped && Object.values(handEquipped).includes(itemName)) return true;
+            }
+          }
+          return false;
         }
-      } catch (error) {
-        if (els.summaryNote) els.summaryNote.textContent = `Не удалось загрузить ферму ${id}: ${error.message}`;
+
+        document.querySelectorAll('.buff-checkbox').forEach(cb => {
+           cb.checked = hasBuff(cb.value);
+        });
+
+        applySelectedBuffs();
+        
+        els.apiStatus.textContent = `✅ Ферма ${id} успешно загружена!`;
+        els.apiStatus.className = 'good';
+      } catch (e) {
+         els.apiStatus.textContent = '❌ Ошибка: ' + e.message;
+         els.apiStatus.className = 'bad';
       } finally {
-        if (els.loadFarmBtn) els.loadFarmBtn.disabled = false;
-        if (els.loadFarmBtn) els.loadFarmBtn.textContent = 'Загрузить ферму';
+         els.loadFarmBtn.disabled = false;
       }
     }
 
@@ -1084,68 +851,39 @@ function buildAcquisitionTooltip(resource, mode, marketPrice, craftCost) {
       tip.id = 'formulaTooltip';
       tip.className = 'formula-tooltip';
       tip.hidden = true;
-      tip.setAttribute('role', 'tooltip');
       document.body.appendChild(tip);
       let active = null;
       function position(trigger) {
         const r = trigger.getBoundingClientRect();
-        const margin = 8;
-        const maxLeft = window.innerWidth - tip.offsetWidth - margin;
-        tip.style.left = `${Math.max(margin, Math.min(r.left, maxLeft))}px`;
-        let top = r.top - tip.offsetHeight - margin;
-        if (top < margin) top = r.bottom + margin;
+        const maxLeft = window.innerWidth - tip.offsetWidth - 8;
+        tip.style.left = `${Math.max(8, Math.min(r.left, maxLeft))}px`;
+        let top = r.top - tip.offsetHeight - 8;
+        if (top < 8) top = r.bottom + 8;
         tip.style.top = `${top}px`;
       }
       function show(trigger) {
-        // Защита от мерцания: если мы уже смотрим на эту подсказку, не рисуем её заново
         if (active === trigger && !tip.hidden) return;
-
         const tpl = trigger.querySelector('template.tooltip-source');
         if (!tpl) return;
         tip.innerHTML = tpl.innerHTML;
-        tip.hidden = false;
-        active = trigger;
-        requestAnimationFrame(() => position(trigger));
+        tip.hidden = false; active = trigger; requestAnimationFrame(() => position(trigger));
       }
       function hide() { tip.hidden = true; active = null; }
-      els.resultsBody.addEventListener('mouseover', (e) => {
-        const tr = e.target.closest('.tooltip-trigger');
-        if (tr) show(tr);
-      });
-      els.resultsBody.addEventListener('mouseout', (e) => {
-        const tr = e.target.closest('.tooltip-trigger');
-        if (tr && !tr.contains(e.relatedTarget)) hide();
-      });
-      els.resultsBody.addEventListener('focusin', (e) => {
-        const tr = e.target.closest('.tooltip-trigger');
-        if (tr) show(tr);
-      });
-      els.resultsBody.addEventListener('focusout', (e) => {
-        const tr = e.target.closest('.tooltip-trigger');
-        if (tr && !tr.contains(e.relatedTarget)) hide();
-      });
-      window.addEventListener('scroll', () => { if (active) position(active); }, true);
-      window.addEventListener('resize', () => { if (active) position(active); });
+      els.resultsBody.addEventListener('mouseover', (e) => { const tr = e.target.closest('.tooltip-trigger'); if (tr) show(tr); });
+      els.resultsBody.addEventListener('mouseout', (e) => { const tr = e.target.closest('.tooltip-trigger'); if (tr && !tr.contains(e.relatedTarget)) hide(); });
     })();
 
-    document.querySelectorAll('input, select').forEach(el => { el.addEventListener('input', recalc); el.addEventListener('change', recalc); });
-    if (els.refreshBtn) els.refreshBtn.addEventListener('click', loadPrices);
-    if (els.refreshBtnTop) els.refreshBtnTop.addEventListener('click', loadPrices);
-    if (els.debugPricesBtn) els.debugPricesBtn.addEventListener('click', debugPrices);
-    if (els.debugFarmBtn) els.debugFarmBtn.addEventListener('click', debugFarm);
-    if (els.debugBoostsBtn) els.debugBoostsBtn.addEventListener('click', debugBoosts);
-    if (els.debugBtn) els.debugBtn.addEventListener('click', debugPrices);
-    if (els.loadFarmBtn) els.loadFarmBtn.addEventListener('click', loadFarm);
-    if (els.presetBtn) {
-      els.presetBtn.addEventListener('click', () => {
-        document.getElementById('yieldWood').value = 1;
-        document.getElementById('yieldStone').value = 1;
-        document.getElementById('yieldIron').value = 1;
-        document.getElementById('yieldGold').value = 1;
-        document.getElementById('yieldCrimstone').value = 1;
-        recalc();
-      });
-    }
+    document.querySelectorAll('input, select').forEach(el => { 
+      if (!el.classList.contains('buff-checkbox')) {
+        el.addEventListener('input', recalc); 
+        el.addEventListener('change', recalc); 
+      }
+    });
+
+    els.refreshBtnTop.addEventListener('click', loadPrices);
+    els.loadFarmBtn.addEventListener('click', loadFarm);
+    
+    initBuffSimulator();
     loadPrices();
     setInterval(loadPrices, 60000);
   </script>
