@@ -253,21 +253,31 @@
 
     // СЛОВАРЬ БАФФОВ ДЛЯ СИМУЛЯТОРА
     const BUFF_DICTIONARY = {
+      // Железо
       "Lady Bug": { type: "yield", resource: "Iron", amount: 0.25 },
       "Iron Bumpkin": { type: "yield", resource: "Iron", amount: 0.2 },
       "Ferrous Favor": { type: "yield", resource: "Iron", amount: 0.2 },
-      "Bionic Drill": { type: "yield", resource: ["Iron", "Gold", "Crimstone"], amount: 0.5 },
+      
+      // Золото
       "Gold Beetle": { type: "yield", resource: "Gold", amount: 0.1 },
       "Golden Touch": { type: "yield", resource: "Gold", amount: 0.2 },
       "Gilded Swordfish": { type: "yield", resource: "Gold", amount: 0.1 },
+
+      // Кримстоун
       "Crimstone Clam": { type: "yield", resource: "Crimstone", amount: 0.1 },
+
+      // Мульти-минералы (Убрали Bionic Drill отсюда)
       "Miner's Monument": { type: "yield", resource: ["Iron", "Gold", "Stone"], amount: 0.1 },
+
+      // Дерево
       "Apprentice Beaver": { type: "yield", resource: "Wood", amount: 0.2 },
       "Woodcutter's Monument": { type: "yield", resource: "Wood", amount: 0.1 },
       "Lumberjack's Extra": { type: "yield", resource: "Wood", amount: 0.1 },
       "Tough Tree": { type: "yield", resource: "Wood", amount: 0.2 },
       "Axe": { type: "yield", resource: "Wood", amount: 0.1 },
       "Squirrel": { type: "yield", resource: "Wood", amount: 0.2 },
+
+      // Камень
       "Tunnel Mole": { type: "yield", resource: "Stone", amount: 0.25 },
       "Rocky the Mole": { type: "yield", resource: "Stone", amount: 0.25 },
       "Rock'N'Roll": { type: "yield", resource: "Stone", amount: 0.2 },
